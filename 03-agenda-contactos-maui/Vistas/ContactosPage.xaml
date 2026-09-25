@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="AgendaContactosMaui.Vistas.ContactosPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:modelos="clr-namespace:AgendaContactosMaui.Modelos"
+    xmlns:vm="clr-namespace:AgendaContactosMaui.ViewModels"
+    Title="Agenda de contactos"
+    x:DataType="vm:ContactosViewModel">
+
+    <Grid RowDefinitions="Auto,Auto,*">
+
+        <!--  Paso 3c: búsqueda por nombre (filtra mientras se escribe)  -->
+        <SearchBar
+            Grid.Row="0"
+            Margin="8,8,8,0"
+            Placeholder="Buscar por nombre"
+            Text="{Binding TextoBusqueda}" />
+
+        <Label
+            Grid.Row="1"
+            Margin="20,4,20,8"
+            FontSize="13"
+            Text="{Binding Resumen}"
+            TextColor="{AppThemeBinding Light={StaticResource Gray500},
+                                        Dark={StaticResource Gray300}}" />
+
+        <!--  Paso 3b: lista de todos los contactos guardados  -->
+        <CollectionView
+            x:Name="Lista"
+            Grid.Row="2"
+            ItemsSource="{Binding Contactos}"
+            Opacity="0">
+
+            <CollectionView.ItemsLayout>
+                <LinearItemsLayout ItemSpacing="8" Orientation="Vertical" />
+            </CollectionView.ItemsLayout>
+
+            <CollectionView.EmptyView>
+                <VerticalStackLayout Padding="32" Spacing="6">
+                    <Label
+                        FontSize="16"
+                        HorizontalTextAlignment="Center"
+                        Text="No hay contactos para mostrar" />
+                    <Label
+                        FontSize="13"
+                        HorizontalTextAlignment="Center"
+                        Text="Probá con otro nombre o agregá uno con el botón +."
+                        TextColor="{StaticResource Gray500}" />
+                </VerticalStackLayout>
+            </CollectionView.EmptyView>
+
+            <CollectionView.ItemTemplate>
+                <DataTemplate x:DataType="modelos:Contacto">
+                    <!--  Extra: deslizar a la izquierda para eliminar por Id  -->
+                    <SwipeView Margin="12,0">
+                        <SwipeView.RightItems>
+                            <SwipeItems Mode="Execute">
+                                <SwipeItem
+                                    BackgroundColor="#C0392B"
+                                    Command="{Binding Source={RelativeSource AncestorType={x:Type vm:ContactosViewModel}}, Path=EliminarCommand, x:DataType=vm:ContactosViewModel}"
+                                    CommandParameter="{Binding .}"
+                                    Text="Eliminar" />
+                            </SwipeItems>
+                        </SwipeView.RightItems>
+
+                        <Border
+                            Padding="12"
+                            BackgroundColor="{AppThemeBinding Light=White,
+                                                              Dark={StaticResource Gray900}}"
+                            Stroke="{AppThemeBinding Light={StaticResource Gray100},
+                                                     Dark={StaticResource Gray600}}"
+                            StrokeShape="RoundRectangle 12">
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type vm:ContactosViewModel}}, Path=AbrirCommand, x:DataType=vm:ContactosViewModel}" CommandParameter="{Binding .}" />
+                            </Border.GestureRecognizers>
+
+                            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+                                <!--  Círculo con la inicial  -->
+                                <Border
+                                    BackgroundColor="{StaticResource Primary}"
+                                    HeightRequest="44"
+                                    StrokeShape="RoundRectangle 22"
+                                    StrokeThickness="0"
+                                    VerticalOptions="Center"
+                                    WidthRequest="44">
+                                    <Label
+                                        FontAttributes="Bold"
+                                        FontSize="18"
+                                        HorizontalOptions="Center"
+                                        Text="{Binding Inicial}"
+                                        TextColor="White"
+                                        VerticalOptions="Center" />
+                                </Border>
+
+                                <VerticalStackLayout Grid.Column="1" Spacing="2" VerticalOptions="Center">
+                                    <Label FontAttributes="Bold" FontSize="16" Text="{Binding Nombre}" />
+                                    <Label FontSize="13" Text="{Binding Telefono, StringFormat='📞 {0}'}" />
+                                    <Label FontSize="13" Text="{Binding Email, StringFormat='✉ {0}'}" />
+                                </VerticalStackLayout>
+
+                                <Label
+                                    Grid.Column="2"
+                                    FontSize="12"
+                                    Text="{Binding Id, StringFormat='#{0}'}"
+                                    TextColor="{StaticResource Gray500}"
+                                    VerticalOptions="Start" />
+                            </Grid>
+                        </Border>
+                    </SwipeView>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+
+            <CollectionView.Footer>
+                <BoxView HeightRequest="88" Color="Transparent" />
+            </CollectionView.Footer>
+        </CollectionView>
+
+        <!--  Botón flotante para agregar  -->
+        <Button
+            x:Name="BotonAgregar"
+            Grid.Row="2"
+            Margin="20"
+            Padding="0"
+            BackgroundColor="{StaticResource Primary}"
+            Command="{Binding AgregarCommand}"
+            CornerRadius="28"
+            FontSize="28"
+            HeightRequest="56"
+            HorizontalOptions="End"
+            Pressed="BotonAgregar_Pressed"
+            Released="BotonAgregar_Released"
+            SemanticProperties.Description="Agregar contacto"
+            Text="+"
+            TextColor="White"
+            VerticalOptions="End"
+            WidthRequest="56" />
+    </Grid>
+</ContentPage>
