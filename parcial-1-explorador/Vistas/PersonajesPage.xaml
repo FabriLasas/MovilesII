@@ -1,0 +1,214 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ContentPage
+    x:Class="ExploradorPersonajes.Vistas.PersonajesPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:modelos="clr-namespace:ExploradorPersonajes.Modelos"
+    xmlns:vm="clr-namespace:ExploradorPersonajes.ViewModels"
+    x:DataType="vm:PersonajesViewModel"
+    Title="{Binding Titulo}">
+
+    <Grid Padding="16" RowDefinitions="Auto,Auto,Auto,Auto,*" RowSpacing="10">
+
+        <!--  Botonera: los comandos viven en el ViewModel  -->
+        <Grid Grid.Row="0" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+            <Button
+                Grid.Column="0"
+                Command="{Binding CargarPersonajesCommand}"
+                IsEnabled="{Binding NoEstaCargando}"
+                Text="Cargar datos" />
+            <Button
+                Grid.Column="1"
+                BackgroundColor="#7F8C8D"
+                Command="{Binding ProbarError404Command}"
+                IsEnabled="{Binding NoEstaCargando}"
+                Text="Probar 404" />
+        </Grid>
+
+        <!--  Búsqueda. El ViewModel espera 500 ms de silencio antes de
+              consultar a la API, así que no hace falta botón de buscar.  -->
+        <SearchBar
+            Grid.Row="1"
+            Placeholder="Buscar por nombre..."
+            Text="{Binding TextoBusqueda}" />
+
+        <!--  Filtro por estado. Se usa un CollectionView horizontal con
+              selección única en lugar de botones: el VisualStateManager ya
+              provee el estado "Selected", que evita escribir un convertidor
+              para resaltar la opción activa.  -->
+        <CollectionView
+            Grid.Row="2"
+            HeightRequest="44"
+            ItemsSource="{Binding OpcionesFiltro}"
+            SelectedItem="{Binding FiltroSeleccionado}"
+            SelectionMode="Single">
+            <CollectionView.ItemsLayout>
+                <LinearItemsLayout ItemSpacing="8" Orientation="Horizontal" />
+            </CollectionView.ItemsLayout>
+            <CollectionView.ItemTemplate>
+                <DataTemplate x:DataType="modelos:OpcionFiltro">
+                    <Border
+                        Padding="14,8"
+                        BackgroundColor="Transparent"
+                        Stroke="#D0D0D0"
+                        StrokeShape="RoundRectangle 18"
+                        StrokeThickness="1">
+                        <VisualStateManager.VisualStateGroups>
+                            <VisualStateGroupList>
+                                <VisualStateGroup x:Name="CommonStates">
+                                    <VisualState x:Name="Normal">
+                                        <VisualState.Setters>
+                                            <Setter Property="BackgroundColor" Value="Transparent" />
+                                            <Setter Property="Stroke" Value="#D0D0D0" />
+                                        </VisualState.Setters>
+                                    </VisualState>
+                                    <VisualState x:Name="Selected">
+                                        <VisualState.Setters>
+                                            <Setter Property="BackgroundColor" Value="#512BD4" />
+                                            <Setter Property="Stroke" Value="#512BD4" />
+                                        </VisualState.Setters>
+                                    </VisualState>
+                                </VisualStateGroup>
+                            </VisualStateGroupList>
+                        </VisualStateManager.VisualStateGroups>
+
+                        <Label
+                            FontSize="13"
+                            Text="{Binding Etiqueta}"
+                            VerticalOptions="Center" />
+                    </Border>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+
+        <!--  Zona de estado: spinner + mensaje al usuario  -->
+        <VerticalStackLayout Grid.Row="3" Spacing="6">
+            <ActivityIndicator
+                HorizontalOptions="Center"
+                IsRunning="{Binding EstaCargando}"
+                IsVisible="{Binding EstaCargando}" />
+
+            <Label
+                FontSize="14"
+                HorizontalTextAlignment="Center"
+                Text="{Binding MensajeEstado}">
+                <Label.Triggers>
+                    <!--  El color del mensaje cambia según sea error o información  -->
+                    <DataTrigger
+                        Binding="{Binding HayError}"
+                        TargetType="Label"
+                        Value="True">
+                        <Setter Property="TextColor" Value="#C0392B" />
+                        <Setter Property="FontAttributes" Value="Bold" />
+                    </DataTrigger>
+                    <DataTrigger
+                        Binding="{Binding HayError}"
+                        TargetType="Label"
+                        Value="False">
+                        <Setter Property="TextColor" Value="#7F8C8D" />
+                        <Setter Property="FontAttributes" Value="None" />
+                    </DataTrigger>
+                </Label.Triggers>
+            </Label>
+        </VerticalStackLayout>
+
+        <!--  Lista de personajes, envuelta en RefreshView para habilitar el
+              gesto de arrastrar hacia abajo y recargar.  -->
+        <RefreshView
+            Grid.Row="4"
+            Command="{Binding RefrescarCommand}"
+            IsRefreshing="{Binding EstaRefrescando}">
+
+            <CollectionView
+                ItemsSource="{Binding Personajes}"
+                RemainingItemsThreshold="4"
+                RemainingItemsThresholdReachedCommand="{Binding CargarMasCommand}"
+                SelectionMode="None">
+
+                <!--  El EmptyView necesita un contenedor: con un Label suelto
+                      MAUI no le asigna alto y no llega a dibujarse.  -->
+                <CollectionView.EmptyView>
+                    <ContentView>
+                        <VerticalStackLayout
+                            Padding="24"
+                            HorizontalOptions="Center"
+                            Spacing="8"
+                            VerticalOptions="Center">
+                            <Label
+                                FontSize="40"
+                                HorizontalTextAlignment="Center"
+                                Text="🔍"
+                                TextColor="#95A5A6" />
+                            <Label
+                                FontAttributes="Bold"
+                                FontSize="16"
+                                HorizontalTextAlignment="Center"
+                                Text="No hay personajes para mostrar"
+                                TextColor="#95A5A6" />
+                            <Label
+                                FontSize="13"
+                                HorizontalTextAlignment="Center"
+                                Text="Probá con otro nombre o cambiá el filtro de estado."
+                                TextColor="#7F8C8D" />
+                        </VerticalStackLayout>
+                    </ContentView>
+                </CollectionView.EmptyView>
+
+                <CollectionView.ItemTemplate>
+                    <DataTemplate x:DataType="modelos:Personaje">
+                        <Border
+                            Margin="0,0,0,10"
+                            Padding="10"
+                            Stroke="#E0E0E0"
+                            StrokeShape="RoundRectangle 12"
+                            StrokeThickness="1">
+
+                            <!--  El tap invoca un comando del ViewModel, no un evento del code-behind  -->
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer
+                                    Command="{Binding Source={RelativeSource AncestorType={x:Type vm:PersonajesViewModel}}, Path=VerDetalleCommand}"
+                                    CommandParameter="{Binding .}" />
+                            </Border.GestureRecognizers>
+
+                            <Grid ColumnDefinitions="64,*" ColumnSpacing="12">
+                                <Image
+                                    Grid.Column="0"
+                                    Aspect="AspectFill"
+                                    HeightRequest="64"
+                                    Source="{Binding ImagenUrl}"
+                                    WidthRequest="64">
+                                    <Image.Clip>
+                                        <RoundRectangleGeometry CornerRadius="8" Rect="0,0,64,64" />
+                                    </Image.Clip>
+                                </Image>
+
+                                <VerticalStackLayout
+                                    Grid.Column="1"
+                                    Spacing="2"
+                                    VerticalOptions="Center">
+                                    <Label
+                                        FontAttributes="Bold"
+                                        FontSize="16"
+                                        Text="{Binding Nombre}" />
+                                    <Label
+                                        FontSize="13"
+                                        Text="{Binding Subtitulo}"
+                                        TextColor="{Binding ColorEstado}" />
+                                </VerticalStackLayout>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+
+                <!--  Indicador al pie mientras se trae la página siguiente  -->
+                <CollectionView.Footer>
+                    <ActivityIndicator
+                        Margin="0,4,0,12"
+                        HorizontalOptions="Center"
+                        IsRunning="{Binding EstaCargandoMas}"
+                        IsVisible="{Binding EstaCargandoMas}" />
+                </CollectionView.Footer>
+            </CollectionView>
+        </RefreshView>
+    </Grid>
+</ContentPage>
