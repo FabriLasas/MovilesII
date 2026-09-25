@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:PerfilAlumno.ViewModels"
+             x:Class="PerfilAlumno.Views.MainPage"
+             x:DataType="vm:ProfileViewModel"
+             Title="Perfil del Alumno">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="24" Spacing="18" MaximumWidthRequest="600">
+
+            <!-- ===== Imagen de perfil ===== -->
+            <Border HorizontalOptions="Center" StrokeThickness="2" Stroke="LightGray"
+                    HeightRequest="140" WidthRequest="140">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="70" />
+                </Border.StrokeShape>
+                <Image Source="{Binding ImagenUrl}" Aspect="AspectFill" />
+            </Border>
+
+            <!-- ===== Datos guardados ===== -->
+            <Grid RowDefinitions="Auto,Auto,Auto" ColumnDefinitions="Auto,*"
+                  RowSpacing="6" ColumnSpacing="10">
+                <Label Grid.Row="0" Grid.Column="0" Text="Nombre:" FontAttributes="Bold" />
+                <Label Grid.Row="0" Grid.Column="1" Text="{Binding NombreGuardado}" />
+                <Label Grid.Row="1" Grid.Column="0" Text="Edad:" FontAttributes="Bold" />
+                <Label Grid.Row="1" Grid.Column="1" Text="{Binding EdadGuardada}" />
+                <Label Grid.Row="2" Grid.Column="0" Text="Sobre mi:" FontAttributes="Bold" />
+                <Label Grid.Row="2" Grid.Column="1" Text="{Binding DescripcionGuardada}" />
+            </Grid>
+
+            <BoxView HeightRequest="1" Color="LightGray" />
+
+            <!-- ===== Formulario de edicion (TwoWay) ===== -->
+            <Label Text="Editar perfil" FontSize="20" FontAttributes="Bold" />
+
+            <Entry Placeholder="Nombre" Text="{Binding Nombre, Mode=TwoWay}" />
+            <Entry Placeholder="Edad" Keyboard="Numeric" Text="{Binding EdadTexto, Mode=TwoWay}" />
+            <Editor Placeholder="Conta algo sobre vos..." HeightRequest="110"
+                    AutoSize="TextChanges" Text="{Binding Descripcion, Mode=TwoWay}" />
+
+            <Label Text="{Binding MensajeError}" TextColor="Red" IsVisible="{Binding HayError}" />
+
+            <!-- Aviso de cambios pendientes: bloquea la navegacion al detalle -->
+            <Label Text="Tenes cambios sin guardar."
+                   TextColor="DarkOrange"
+                   IsVisible="{Binding HayCambiosSinGuardar}" />
+
+            <!-- ===== Acciones ===== -->
+            <Button Text="Guardar" Command="{Binding GuardarCommand}" HorizontalOptions="Fill" />
+
+            <!-- La navegacion la dispara el ViewModel, no el code-behind -->
+            <Button Text="Ver detalle del perfil"
+                    Command="{Binding VerDetalleCommand}"
+                    BackgroundColor="Transparent"
+                    TextColor="{AppThemeBinding Light=#512BD4, Dark=#B39DFF}"
+                    BorderColor="#512BD4"
+                    BorderWidth="1"
+                    HorizontalOptions="Fill" />
+
+        </VerticalStackLayout>
+    </ScrollView>
+
+</ContentPage>

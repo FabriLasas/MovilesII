@@ -1,0 +1,2 @@
+Los archivos de esta carpeta se empaquetan con la app como "raw assets".
+Se leen en tiempo de ejecucion con FileSystem.OpenAppPackageFileAsync("nombre.ext").
