@@ -16,9 +16,11 @@ proyectos independientes: no comparten código entre sí.
 | [`03-agenda-contactos-maui`](03-agenda-contactos-maui) | Agenda de contactos, versión final | .NET MAUI + SQLite |
 | [`parcial-1-explorador`](parcial-1-explorador) | **Primer examen parcial**: explorador de personajes | .NET MAUI |
 
-> `01-perfil-alumno` contiene únicamente los archivos de la raíz del proyecto.
-> El resto del código (vistas, modelos y servicios) quedó fuera del repositorio
-> al subirse la actividad en su momento.
+Cada carpeta contiene el proyecto completo y compilable. `01-perfil-alumno`
+incluye además el ejercicio de navegación ya integrado: servicios de navegación
+y notificación, rutas centralizadas y pantalla de detalle con paso de
+parámetros. Su documentación está en
+[`NAVIGATION.md`](01-perfil-alumno/NAVIGATION.md).
 
 ---
 

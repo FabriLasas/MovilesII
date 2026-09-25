@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:PerfilAlumno.ViewModels"
+             x:Class="PerfilAlumno.Views.ProfileDetailPage"
+             x:DataType="vm:ProfileDetailViewModel"
+             Title="Detalle del perfil">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="24" Spacing="18" MaximumWidthRequest="600">
+
+            <!-- ===== Vista normal: solo si los parametros llegaron bien ===== -->
+            <VerticalStackLayout Spacing="18" IsVisible="{Binding DatosValidos}">
+
+                <Border HorizontalOptions="Center" StrokeThickness="2" Stroke="LightGray"
+                        HeightRequest="160" WidthRequest="160">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="80" />
+                    </Border.StrokeShape>
+                    <Image Source="{Binding ImagenUrl}" Aspect="AspectFill" />
+                </Border>
+
+                <Label Text="{Binding Nombre}" FontSize="26" FontAttributes="Bold"
+                       HorizontalOptions="Center" />
+                <Label Text="{Binding EdadTexto}" FontSize="17" TextColor="Gray"
+                       HorizontalOptions="Center" />
+
+                <BoxView HeightRequest="1" Color="LightGray" />
+
+                <Label Text="Sobre mi" FontAttributes="Bold" />
+                <Label Text="{Binding Descripcion}" />
+            </VerticalStackLayout>
+
+            <!-- ===== Vista de error: parametros invalidos o faltantes ===== -->
+            <VerticalStackLayout Spacing="12" IsVisible="{Binding HayProblema}">
+                <Label Text="No se pudo cargar el perfil" FontSize="20" FontAttributes="Bold"
+                       TextColor="Red" HorizontalOptions="Center" />
+                <Label Text="{Binding MensajeError}" HorizontalTextAlignment="Center" />
+            </VerticalStackLayout>
+
+            <Button Text="Volver" Command="{Binding VolverCommand}" HorizontalOptions="Fill" />
+
+        </VerticalStackLayout>
+    </ScrollView>
+
+</ContentPage>
