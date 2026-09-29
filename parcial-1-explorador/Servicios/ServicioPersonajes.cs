@@ -19,15 +19,19 @@ public class ServicioPersonajes : IServicioPersonajes
     private const string UrlBase = "https://rickandmortyapi.com/api/";
 
     private readonly HttpClient _http;
+    private readonly IServicioConectividad _conectividad;
+    private readonly IServicioCache _cache;
 
     private static readonly JsonSerializerOptions OpcionesJson = new()
     {
         PropertyNameCaseInsensitive = true
     };
 
-    public ServicioPersonajes(HttpClient http)
+    public ServicioPersonajes(HttpClient http, IServicioConectividad conectividad, IServicioCache cache)
     {
         _http = http;
+        _conectividad = conectividad;
+        _cache = cache;
         _http.BaseAddress = new Uri(UrlBase);
         _http.Timeout = TimeSpan.FromSeconds(15);
     }
@@ -38,6 +42,50 @@ public class ServicioPersonajes : IServicioPersonajes
         string? estado = null,
         CancellationToken ct = default)
         => EjecutarAsync<RespuestaPaginada>(ConstruirRuta(pagina, nombre, estado), esBusqueda: true, ct);
+
+    public Task<ResultadoApi<Personaje>> ObtenerPersonajePorIdAsync(int id, CancellationToken ct = default)
+        => EjecutarAsync<Personaje>($"character/{id}", esBusqueda: false, ct);
+
+    public async Task<ResultadoApi<List<Personaje>>> ObtenerPersonajesPorIdsAsync(
+        IReadOnlyList<int> ids,
+        CancellationToken ct = default)
+    {
+        if (ids.Count == 0)
+        {
+            return ResultadoApi<List<Personaje>>.Exito(new List<Personaje>());
+        }
+
+        // Particularidad de la API: con un solo id devuelve un OBJETO, y con
+        // varios devuelve un ARRAY. Deserializar un objeto como lista falla,
+        // así que el caso de un único favorito se resuelve por separado.
+        if (ids.Count == 1)
+        {
+            var unico = await ObtenerPersonajePorIdAsync(ids[0], ct);
+
+            // Si el único favorito ya no existe, no es un error para el
+            // usuario: simplemente no hay nada que mostrar.
+            if (unico.Error == TipoError.NoEncontrado)
+            {
+                return ResultadoApi<List<Personaje>>.Exito(new List<Personaje>());
+            }
+
+            return unico.Transformar(personaje => new List<Personaje> { personaje });
+        }
+
+        var resultado = await EjecutarAsync<List<Personaje>>(
+            $"character/{string.Join(",", ids)}",
+            esBusqueda: false,
+            ct);
+
+        // La API devuelve los personajes ordenados por id, no en el orden
+        // pedido, y omite en silencio los ids inexistentes. Se reordena para
+        // respetar el orden en que el usuario marcó sus favoritos.
+        return resultado.Transformar(lista =>
+        {
+            var porId = lista.ToDictionary(p => p.Id);
+            return ids.Where(porId.ContainsKey).Select(id => porId[id]).ToList();
+        });
+    }
 
     /// <summary>
     /// Arma la cadena de consulta omitiendo los filtros vacíos. Se escapa el
@@ -61,8 +109,8 @@ public class ServicioPersonajes : IServicioPersonajes
         return $"character/?{string.Join("&", parametros)}";
     }
 
-    public Task<ResultadoApi<Personaje>> ObtenerPersonajePorIdAsync(int id, CancellationToken ct = default)
-        => EjecutarAsync<Personaje>($"character/{id}", esBusqueda: false, ct);
+    private const string MensajeSinConexion =
+        "No hay conexión a internet. Verificá el wifi o los datos móviles.";
 
     /// <summary>
     /// Punto único de entrada a la red. Centralizar aquí el manejo de errores
@@ -77,13 +125,12 @@ public class ServicioPersonajes : IServicioPersonajes
     /// </param>
     private async Task<ResultadoApi<T>> EjecutarAsync<T>(string rutaRelativa, bool esBusqueda, CancellationToken ct)
     {
-        // 1) Chequeo previo de conectividad: si no hay red, evitamos la
-        //    llamada y damos un mensaje preciso en lugar de esperar el timeout.
-        if (Connectivity.Current.NetworkAccess != NetworkAccess.Internet)
+        // 1) Chequeo previo de conectividad: sólo si hay certeza de que no hay
+        //    red se evita la llamada, para responder al instante en lugar de
+        //    esperar el timeout. En los casos dudosos se intenta igual.
+        if (_conectividad.SinRedConfirmada)
         {
-            return ResultadoApi<T>.Fallo(
-                TipoError.SinConexion,
-                "No hay conexión a internet. Verificá el wifi o los datos móviles.");
+            return await RespaldoDesdeCacheAsync<T>(rutaRelativa, TipoError.SinConexion, MensajeSinConexion);
         }
 
         try
@@ -107,6 +154,10 @@ public class ServicioPersonajes : IServicioPersonajes
                     "El servidor respondió con un formato inesperado.");
             }
 
+            // 4) Sólo se guarda en caché lo que se pudo interpretar bien, para
+            //    no terminar mostrando sin conexión una respuesta dañada.
+            await _cache.GuardarAsync(rutaRelativa, contenido);
+
             return ResultadoApi<T>.Exito(datos);
         }
         catch (JsonException)
@@ -120,16 +171,49 @@ public class ServicioPersonajes : IServicioPersonajes
         {
             // Timeout del HttpClient. Se descarta el caso en que la cancelación
             // la pidió el propio usuario, que no es un error a mostrar.
-            return ResultadoApi<T>.Fallo(
+            return await RespaldoDesdeCacheAsync<T>(
+                rutaRelativa,
                 TipoError.TiempoAgotado,
                 "El servidor tardó demasiado en responder. Intentá de nuevo.");
         }
         catch (HttpRequestException ex)
         {
-            // Fallo de transporte: DNS, servidor caído, certificado inválido.
-            return ResultadoApi<T>.Fallo(
-                TipoError.FalloDeRed,
-                $"No se pudo contactar al servidor. ({ex.Message})");
+            // Fallo de transporte. Recién acá se consulta al sistema, pero sólo
+            // para explicar el fallo: si además no informa internet, el
+            // problema más probable es la conexión del dispositivo; si la
+            // informa, es el servidor el que no responde (DNS, caída, certificado).
+            return _conectividad.SistemaInformaInternet
+                ? await RespaldoDesdeCacheAsync<T>(
+                    rutaRelativa,
+                    TipoError.FalloDeRed,
+                    $"No se pudo contactar al servidor. ({ex.Message})")
+                : await RespaldoDesdeCacheAsync<T>(rutaRelativa, TipoError.SinConexion, MensajeSinConexion);
+        }
+    }
+
+    /// <summary>
+    /// Ante un problema de red, intenta responder con la última copia guardada
+    /// de esa misma consulta. Sólo se usa para fallos de conectividad: un 404
+    /// o un 500 son respuestas reales del servidor y se informan tal cual.
+    /// </summary>
+    private async Task<ResultadoApi<T>> RespaldoDesdeCacheAsync<T>(string rutaRelativa, TipoError motivo, string mensaje)
+    {
+        var entrada = await _cache.LeerAsync(rutaRelativa);
+        if (entrada is null)
+        {
+            return ResultadoApi<T>.Fallo(motivo, mensaje);
+        }
+
+        try
+        {
+            var datos = JsonSerializer.Deserialize<T>(entrada.Contenido, OpcionesJson);
+            return datos is null
+                ? ResultadoApi<T>.Fallo(motivo, mensaje)
+                : ResultadoApi<T>.ExitoDesdeCache(datos, entrada.Fecha, motivo, mensaje);
+        }
+        catch (JsonException)
+        {
+            return ResultadoApi<T>.Fallo(motivo, mensaje);
         }
     }
 

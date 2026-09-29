@@ -1,9 +1,10 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using CommunityToolkit.Mvvm.Messaging;
+using ExploradorPersonajes.Mensajes;
 using ExploradorPersonajes.Modelos;
 using ExploradorPersonajes.Servicios;
-using ExploradorPersonajes.Vistas;
 
 namespace ExploradorPersonajes.ViewModels;
 
@@ -13,7 +14,7 @@ namespace ExploradorPersonajes.ViewModels;
 /// No conoce ningún control de la interfaz: se comunica con la vista sólo a
 /// través de propiedades enlazadas y comandos.
 /// </summary>
-public partial class PersonajesViewModel : ViewModelBase
+public partial class PersonajesViewModel : ViewModelBase, IRecipient<FavoritoCambiadoMensaje>
 {
     /// <summary>
     /// Espera desde la última tecla antes de consultar a la API. Sin esta
@@ -23,6 +24,8 @@ public partial class PersonajesViewModel : ViewModelBase
     private const int MilisegundosDeEspera = 500;
 
     private readonly IServicioPersonajes _servicio;
+    private readonly ServiciosDeItem _serviciosDeItem;
+    private readonly IServicioConectividad _conectividad;
 
     /// <summary>
     /// Permite cancelar la búsqueda pendiente cuando el usuario sigue
@@ -43,7 +46,7 @@ public partial class PersonajesViewModel : ViewModelBase
     /// ObservableCollection (y no List) porque notifica altas y bajas a la
     /// interfaz: el CollectionView se actualiza solo al agregar elementos.
     /// </summary>
-    public ObservableCollection<Personaje> Personajes { get; } = new();
+    public ObservableCollection<PersonajeItemViewModel> Personajes { get; } = new();
 
     public IReadOnlyList<OpcionFiltro> OpcionesFiltro { get; }
 
@@ -59,11 +62,23 @@ public partial class PersonajesViewModel : ViewModelBase
     [ObservableProperty]
     public partial bool EstaCargandoMas { get; set; }
 
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(TextoSimulacion))]
+    public partial bool SimulandoSinConexion { get; set; }
+
+    public string TextoSimulacion => SimulandoSinConexion ? "Restaurar red" : "Simular sin red";
+
     public bool ListaVacia => Personajes.Count == 0;
 
-    public PersonajesViewModel(IServicioPersonajes servicio)
+    public PersonajesViewModel(
+        IServicioPersonajes servicio,
+        ServiciosDeItem serviciosDeItem,
+        IServicioConectividad conectividad,
+        IMessenger mensajero)
     {
         _servicio = servicio;
+        _serviciosDeItem = serviciosDeItem;
+        _conectividad = conectividad;
         Titulo = "Personajes";
         TextoBusqueda = string.Empty;
 
@@ -77,6 +92,12 @@ public partial class PersonajesViewModel : ViewModelBase
         FiltroSeleccionado = OpcionesFiltro[0];
 
         MensajeEstado = "Tocá «Cargar datos» o escribí un nombre para buscar.";
+
+        // Suscripción a los cambios de favoritos hechos en otras pantallas.
+        // El mensajero guarda una referencia débil: si este ViewModel deja de
+        // usarse, la suscripción no impide que se libere de memoria.
+        mensajero.RegisterAll(this);
+
         _inicializado = true;
     }
 
@@ -88,6 +109,18 @@ public partial class PersonajesViewModel : ViewModelBase
     partial void OnTextoBusquedaChanged(string value) => ProgramarBusqueda();
 
     partial void OnFiltroSeleccionadoChanged(OpcionFiltro? value) => ProgramarBusqueda();
+
+    /// <summary>
+    /// Mantiene sincronizada la estrella de la tarjeta cuando el favorito se
+    /// cambia desde otra pantalla (por ejemplo, desde el detalle).
+    /// </summary>
+    public void Receive(FavoritoCambiadoMensaje mensaje)
+    {
+        foreach (var item in Personajes.Where(p => p.Id == mensaje.Personaje.Id))
+        {
+            item.EsFavorito = mensaje.EsFavorito;
+        }
+    }
 
     /// <summary>
     /// Implementa el "debounce": cancela la búsqueda que estuviera pendiente y
@@ -159,21 +192,18 @@ public partial class PersonajesViewModel : ViewModelBase
 
         if (resultado.EsExitoso && resultado.Datos is not null)
         {
-            foreach (var personaje in resultado.Datos.Resultados)
-            {
-                Personajes.Add(personaje);
-            }
+            AgregarPersonajes(resultado.Datos.Resultados);
 
             _paginaActual = 1;
             _hayPaginaSiguiente = resultado.Datos.Info?.PaginaSiguiente is not null;
 
-            var total = resultado.Datos.Info?.TotalElementos ?? Personajes.Count;
-            MostrarInfo($"Mostrando {Personajes.Count} de {total} personajes.");
+            InformarProgreso(resultado);
         }
         else
         {
             _paginaActual = 0;
             _hayPaginaSiguiente = false;
+            OcultarAvisoCache();
 
             // SinResultados no es una falla: es una búsqueda que no encontró
             // nada. Se informa sin el formato de error para no alarmar.
@@ -215,16 +245,12 @@ public partial class PersonajesViewModel : ViewModelBase
 
         if (resultado.EsExitoso && resultado.Datos is not null)
         {
-            foreach (var personaje in resultado.Datos.Resultados)
-            {
-                Personajes.Add(personaje);
-            }
+            AgregarPersonajes(resultado.Datos.Resultados);
 
             _paginaActual++;
             _hayPaginaSiguiente = resultado.Datos.Info?.PaginaSiguiente is not null;
 
-            var total = resultado.Datos.Info?.TotalElementos ?? Personajes.Count;
-            MostrarInfo($"Mostrando {Personajes.Count} de {total} personajes.");
+            InformarProgreso(resultado);
         }
         else
         {
@@ -232,6 +258,18 @@ public partial class PersonajesViewModel : ViewModelBase
         }
 
         EstaCargandoMas = false;
+    }
+
+    /// <summary>
+    /// Alterna el modo sin conexión simulado y recarga, para poder demostrar
+    /// el manejo de la falta de red y la caché sin apagar el wifi.
+    /// </summary>
+    [RelayCommand(AllowConcurrentExecutions = false)]
+    private async Task AlternarSimulacionAsync()
+    {
+        SimulandoSinConexion = !SimulandoSinConexion;
+        _conectividad.SimularSinConexion = SimulandoSinConexion;
+        await BuscarDesdeCeroAsync(CancellationToken.None);
     }
 
     /// <summary>
@@ -258,18 +296,31 @@ public partial class PersonajesViewModel : ViewModelBase
         EstaCargando = false;
     }
 
-    /// <summary>
-    /// Navega al detalle pasando el personaje seleccionado como parámetro.
-    /// La navegación se dispara desde el ViewModel, no desde el code-behind.
-    /// </summary>
-    [RelayCommand]
-    private async Task VerDetalleAsync(Personaje? personaje)
+    private void AgregarPersonajes(IEnumerable<Personaje> personajes)
     {
-        if (personaje is null) return;
-
-        await Shell.Current.GoToAsync(nameof(DetallePage), new Dictionary<string, object>
+        foreach (var personaje in personajes)
         {
-            [DetalleViewModel.ClaveParametro] = personaje
-        });
+            Personajes.Add(new PersonajeItemViewModel(personaje, _serviciosDeItem));
+        }
+    }
+
+    /// <summary>
+    /// Actualiza el mensaje de estado y la franja de aviso. Si los datos vienen
+    /// de la caché, el total informado es el de aquella consulta guardada.
+    /// </summary>
+    private void InformarProgreso(ResultadoApi<RespuestaPaginada> resultado)
+    {
+        var total = resultado.Datos?.Info?.TotalElementos ?? Personajes.Count;
+
+        if (resultado.DesdeCache && resultado.FechaCache is { } fecha)
+        {
+            MostrarAvisoCache(fecha);
+            MostrarInfo($"Mostrando {Personajes.Count} de {total} personajes (copia guardada).");
+        }
+        else
+        {
+            OcultarAvisoCache();
+            MostrarInfo($"Mostrando {Personajes.Count} de {total} personajes.");
+        }
     }
 }

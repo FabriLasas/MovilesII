@@ -6,10 +6,16 @@
     xmlns:vistas="clr-namespace:ExploradorPersonajes.Vistas"
     Title="Explorador de Personajes">
 
-    <!--  Página raíz. Las páginas secundarias se registran como rutas en el code-behind.  -->
-    <ShellContent
-        Title="Personajes"
-        ContentTemplate="{DataTemplate vistas:PersonajesPage}"
-        Route="personajes" />
+    <!--  Navegación por pestañas: cada sección principal es una pestaña
+          hermana, y el detalle se apila encima de cualquiera de ellas. En
+          Android se muestran abajo; en Windows, arriba.  -->
+    <TabBar>
+        <Tab Title="Personajes" Icon="tab_personajes.png">
+            <ShellContent ContentTemplate="{DataTemplate vistas:PersonajesPage}" Route="personajes" />
+        </Tab>
+        <Tab Title="Favoritos" Icon="tab_favoritos.png">
+            <ShellContent ContentTemplate="{DataTemplate vistas:FavoritosPage}" Route="favoritos" />
+        </Tab>
+    </TabBar>
 
 </Shell>

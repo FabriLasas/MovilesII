@@ -28,6 +28,16 @@ public partial class ViewModelBase : ObservableObject
     [ObservableProperty]
     public partial string Titulo { get; set; }
 
+    /// <summary>
+    /// Indica que lo que se ve en pantalla es la copia guardada y no datos
+    /// recién traídos del servidor. Controla la franja de aviso.
+    /// </summary>
+    [ObservableProperty]
+    public partial bool MostrandoCache { get; set; }
+
+    [ObservableProperty]
+    public partial string AvisoCache { get; set; }
+
     /// <summary>Negación expuesta como propiedad para poder enlazarla desde XAML.</summary>
     public bool NoEstaCargando => !EstaCargando;
 
@@ -35,6 +45,7 @@ public partial class ViewModelBase : ObservableObject
     {
         MensajeEstado = string.Empty;
         Titulo = string.Empty;
+        AvisoCache = string.Empty;
     }
 
     protected void MostrarInfo(string mensaje)
@@ -48,4 +59,12 @@ public partial class ViewModelBase : ObservableObject
         HayError = true;
         MensajeEstado = mensaje;
     }
+
+    protected void MostrarAvisoCache(DateTime fecha)
+    {
+        AvisoCache = $"Sin conexión · Mostrando datos guardados el {fecha:dd/MM} a las {fecha:HH:mm}";
+        MostrandoCache = true;
+    }
+
+    protected void OcultarAvisoCache() => MostrandoCache = false;
 }

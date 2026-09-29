@@ -26,4 +26,10 @@ public interface IServicioPersonajes
         CancellationToken ct = default);
 
     Task<ResultadoApi<Personaje>> ObtenerPersonajePorIdAsync(int id, CancellationToken ct = default);
+
+    /// <summary>
+    /// Obtiene varios personajes en una sola llamada, devueltos en el mismo
+    /// orden en que se pidieron.
+    /// </summary>
+    Task<ResultadoApi<List<Personaje>>> ObtenerPersonajesPorIdsAsync(IReadOnlyList<int> ids, CancellationToken ct = default);
 }

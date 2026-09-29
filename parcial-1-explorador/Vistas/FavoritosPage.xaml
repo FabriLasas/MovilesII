@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ContentPage
+    x:Class="ExploradorPersonajes.Vistas.FavoritosPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:vm="clr-namespace:ExploradorPersonajes.ViewModels"
+    x:DataType="vm:FavoritosViewModel"
+    Title="{Binding Titulo}">
+
+    <Grid Padding="16" RowDefinitions="Auto,Auto,*" RowSpacing="10">
+
+        <Border
+            Grid.Row="0"
+            IsVisible="{Binding MostrandoCache}"
+            Style="{StaticResource EstiloAvisoCache}">
+            <Label
+                FontSize="13"
+                Text="{Binding AvisoCache}"
+                TextColor="#7A5A00" />
+        </Border>
+
+        <VerticalStackLayout Grid.Row="1" Spacing="6">
+            <ActivityIndicator
+                HorizontalOptions="Center"
+                IsRunning="{Binding EstaCargando}"
+                IsVisible="{Binding EstaCargando}" />
+
+            <Label
+                FontSize="14"
+                HorizontalTextAlignment="Center"
+                Text="{Binding MensajeEstado}">
+                <Label.Triggers>
+                    <DataTrigger
+                        Binding="{Binding HayError}"
+                        TargetType="Label"
+                        Value="True">
+                        <Setter Property="TextColor" Value="#C0392B" />
+                        <Setter Property="FontAttributes" Value="Bold" />
+                    </DataTrigger>
+                    <DataTrigger
+                        Binding="{Binding HayError}"
+                        TargetType="Label"
+                        Value="False">
+                        <Setter Property="TextColor" Value="#7F8C8D" />
+                    </DataTrigger>
+                </Label.Triggers>
+            </Label>
+        </VerticalStackLayout>
+
+        <!--  Misma tarjeta que la lista principal, definida una sola vez en
+              PlantillasPersonaje.xaml.  -->
+        <RefreshView
+            Grid.Row="2"
+            Command="{Binding RefrescarCommand}"
+            IsRefreshing="{Binding EstaRefrescando}">
+            <CollectionView
+                ItemTemplate="{StaticResource TarjetaPersonaje}"
+                ItemsSource="{Binding Favoritos}"
+                SelectionMode="None">
+                <CollectionView.EmptyView>
+                    <ContentView>
+                        <VerticalStackLayout
+                            Padding="24"
+                            HorizontalOptions="Center"
+                            Spacing="8"
+                            VerticalOptions="Center">
+                            <Label
+                                FontSize="40"
+                                HorizontalTextAlignment="Center"
+                                Text="☆"
+                                TextColor="#F1C40F" />
+                            <Label
+                                FontAttributes="Bold"
+                                FontSize="16"
+                                HorizontalTextAlignment="Center"
+                                Text="Sin favoritos por ahora"
+                                TextColor="#95A5A6" />
+                            <Label
+                                FontSize="13"
+                                HorizontalTextAlignment="Center"
+                                Text="Tocá la estrella de un personaje o deslizá su tarjeta hacia la derecha."
+                                TextColor="#7F8C8D" />
+                        </VerticalStackLayout>
+                    </ContentView>
+                </CollectionView.EmptyView>
+            </CollectionView>
+        </RefreshView>
+    </Grid>
+</ContentPage>

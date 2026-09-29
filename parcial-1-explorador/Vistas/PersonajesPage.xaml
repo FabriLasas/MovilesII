@@ -8,27 +8,47 @@
     x:DataType="vm:PersonajesViewModel"
     Title="{Binding Titulo}">
 
-    <Grid Padding="16" RowDefinitions="Auto,Auto,Auto,Auto,*" RowSpacing="10">
+    <Grid Padding="16" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,*" RowSpacing="10">
 
-        <!--  Botonera: los comandos viven en el ViewModel  -->
-        <Grid Grid.Row="0" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+        <!--  Acción principal: los comandos viven en el ViewModel  -->
+        <Button
+            Grid.Row="0"
+            Command="{Binding CargarPersonajesCommand}"
+            IsEnabled="{Binding NoEstaCargando}"
+            Text="Cargar datos" />
+
+        <!--  Herramientas para demostrar el manejo de errores sin depender
+              de que el servidor falle o de apagar el wifi.  -->
+        <Grid Grid.Row="1" ColumnDefinitions="*,*" ColumnSpacing="8">
             <Button
                 Grid.Column="0"
-                Command="{Binding CargarPersonajesCommand}"
-                IsEnabled="{Binding NoEstaCargando}"
-                Text="Cargar datos" />
-            <Button
-                Grid.Column="1"
                 BackgroundColor="#7F8C8D"
                 Command="{Binding ProbarError404Command}"
                 IsEnabled="{Binding NoEstaCargando}"
                 Text="Probar 404" />
+            <Button
+                Grid.Column="1"
+                BackgroundColor="#7F8C8D"
+                Command="{Binding AlternarSimulacionCommand}"
+                IsEnabled="{Binding NoEstaCargando}"
+                Text="{Binding TextoSimulacion}" />
         </Grid>
+
+        <!--  Aviso visible sólo cuando lo que se ve es la copia guardada  -->
+        <Border
+            Grid.Row="2"
+            IsVisible="{Binding MostrandoCache}"
+            Style="{StaticResource EstiloAvisoCache}">
+            <Label
+                FontSize="13"
+                Text="{Binding AvisoCache}"
+                TextColor="#7A5A00" />
+        </Border>
 
         <!--  Búsqueda. El ViewModel espera 500 ms de silencio antes de
               consultar a la API, así que no hace falta botón de buscar.  -->
         <SearchBar
-            Grid.Row="1"
+            Grid.Row="3"
             Placeholder="Buscar por nombre..."
             Text="{Binding TextoBusqueda}" />
 
@@ -37,7 +57,7 @@
               provee el estado "Selected", que evita escribir un convertidor
               para resaltar la opción activa.  -->
         <CollectionView
-            Grid.Row="2"
+            Grid.Row="4"
             HeightRequest="44"
             ItemsSource="{Binding OpcionesFiltro}"
             SelectedItem="{Binding FiltroSeleccionado}"
@@ -82,7 +102,7 @@
         </CollectionView>
 
         <!--  Zona de estado: spinner + mensaje al usuario  -->
-        <VerticalStackLayout Grid.Row="3" Spacing="6">
+        <VerticalStackLayout Grid.Row="5" Spacing="6">
             <ActivityIndicator
                 HorizontalOptions="Center"
                 IsRunning="{Binding EstaCargando}"
@@ -115,11 +135,12 @@
         <!--  Lista de personajes, envuelta en RefreshView para habilitar el
               gesto de arrastrar hacia abajo y recargar.  -->
         <RefreshView
-            Grid.Row="4"
+            Grid.Row="6"
             Command="{Binding RefrescarCommand}"
             IsRefreshing="{Binding EstaRefrescando}">
 
             <CollectionView
+                ItemTemplate="{StaticResource TarjetaPersonaje}"
                 ItemsSource="{Binding Personajes}"
                 RemainingItemsThreshold="4"
                 RemainingItemsThresholdReachedCommand="{Binding CargarMasCommand}"
@@ -153,52 +174,6 @@
                         </VerticalStackLayout>
                     </ContentView>
                 </CollectionView.EmptyView>
-
-                <CollectionView.ItemTemplate>
-                    <DataTemplate x:DataType="modelos:Personaje">
-                        <Border
-                            Margin="0,0,0,10"
-                            Padding="10"
-                            Stroke="#E0E0E0"
-                            StrokeShape="RoundRectangle 12"
-                            StrokeThickness="1">
-
-                            <!--  El tap invoca un comando del ViewModel, no un evento del code-behind  -->
-                            <Border.GestureRecognizers>
-                                <TapGestureRecognizer
-                                    Command="{Binding Source={RelativeSource AncestorType={x:Type vm:PersonajesViewModel}}, Path=VerDetalleCommand}"
-                                    CommandParameter="{Binding .}" />
-                            </Border.GestureRecognizers>
-
-                            <Grid ColumnDefinitions="64,*" ColumnSpacing="12">
-                                <Image
-                                    Grid.Column="0"
-                                    Aspect="AspectFill"
-                                    HeightRequest="64"
-                                    Source="{Binding ImagenUrl}"
-                                    WidthRequest="64">
-                                    <Image.Clip>
-                                        <RoundRectangleGeometry CornerRadius="8" Rect="0,0,64,64" />
-                                    </Image.Clip>
-                                </Image>
-
-                                <VerticalStackLayout
-                                    Grid.Column="1"
-                                    Spacing="2"
-                                    VerticalOptions="Center">
-                                    <Label
-                                        FontAttributes="Bold"
-                                        FontSize="16"
-                                        Text="{Binding Nombre}" />
-                                    <Label
-                                        FontSize="13"
-                                        Text="{Binding Subtitulo}"
-                                        TextColor="{Binding ColorEstado}" />
-                                </VerticalStackLayout>
-                            </Grid>
-                        </Border>
-                    </DataTemplate>
-                </CollectionView.ItemTemplate>
 
                 <!--  Indicador al pie mientras se trae la página siguiente  -->
                 <CollectionView.Footer>
