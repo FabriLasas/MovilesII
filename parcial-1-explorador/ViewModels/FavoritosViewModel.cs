@@ -87,8 +87,18 @@ public partial class FavoritosViewModel : ViewModelBase, IRecipient<FavoritoCamb
 
         if (resultado.EsExitoso && resultado.Datos is not null)
         {
+            // Mientras viajaba la respuesta el usuario pudo marcar o desmarcar
+            // favoritos (esos cambios llegan por mensaje). Se reconcilia contra
+            // la lista vigente para no perder ni resucitar ninguno.
+            var vigentes = _favoritos.ObtenerIds();
+            var recibidos = resultado.Datos.Select(p => p.Id).ToHashSet();
+            var agregadosMientras = Favoritos
+                .Where(f => !recibidos.Contains(f.Id) && vigentes.Contains(f.Id))
+                .Select(f => f.Modelo)
+                .ToList();
+
             Favoritos.Clear();
-            foreach (var personaje in resultado.Datos)
+            foreach (var personaje in resultado.Datos.Where(p => vigentes.Contains(p.Id)).Concat(agregadosMientras))
             {
                 Favoritos.Add(new PersonajeItemViewModel(personaje, _serviciosDeItem));
             }

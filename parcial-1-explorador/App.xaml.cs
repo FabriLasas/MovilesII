@@ -1,5 +1,3 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-
 namespace ExploradorPersonajes;
 
 public partial class App : Application

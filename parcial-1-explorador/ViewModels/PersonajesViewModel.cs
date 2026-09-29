@@ -37,6 +37,13 @@ public partial class PersonajesViewModel : ViewModelBase, IRecipient<FavoritoCam
     private bool _hayPaginaSiguiente;
 
     /// <summary>
+    /// Número de la consulta vigente. Cada búsqueda nueva lo incrementa; una
+    /// respuesta que vuelve con un número viejo pertenece a una consulta que
+    /// ya no se muestra y se descarta sin tocar la pantalla.
+    /// </summary>
+    private int _versionConsulta;
+
+    /// <summary>
     /// Evita que las asignaciones del constructor disparen una búsqueda antes
     /// de que la pantalla esté lista.
     /// </summary>
@@ -67,8 +74,6 @@ public partial class PersonajesViewModel : ViewModelBase, IRecipient<FavoritoCam
     public partial bool SimulandoSinConexion { get; set; }
 
     public string TextoSimulacion => SimulandoSinConexion ? "Restaurar red" : "Simular sin red";
-
-    public bool ListaVacia => Personajes.Count == 0;
 
     public PersonajesViewModel(
         IServicioPersonajes servicio,
@@ -171,20 +176,30 @@ public partial class PersonajesViewModel : ViewModelBase, IRecipient<FavoritoCam
 
     private async Task BuscarDesdeCeroAsync(CancellationToken ct)
     {
+        var version = ++_versionConsulta;
         EstaCargando = true;
         MostrarInfo("Buscando...");
 
-        var resultado = await _servicio.ObtenerPersonajesAsync(
-            pagina: 1,
-            nombre: TextoBusqueda,
-            estado: FiltroSeleccionado?.ValorApi,
-            ct);
-
-        // Si mientras viajaba la respuesta el usuario cambió la búsqueda, se
-        // descarta el resultado: mostrarlo sobrescribiría la búsqueda nueva.
-        if (ct.IsCancellationRequested)
+        ResultadoApi<RespuestaPaginada> resultado;
+        try
         {
-            EstaCargando = false;
+            resultado = await _servicio.ObtenerPersonajesAsync(
+                pagina: 1,
+                nombre: TextoBusqueda,
+                estado: FiltroSeleccionado?.ValorApi,
+                ct);
+        }
+        catch (OperationCanceledException)
+        {
+            // Se canceló porque el usuario siguió escribiendo. No se toca el
+            // indicador de carga: ahora le pertenece a la búsqueda nueva.
+            return;
+        }
+
+        // Si mientras viajaba la respuesta empezó otra búsqueda, se descarta
+        // el resultado: mostrarlo sobrescribiría la búsqueda más reciente.
+        if (version != _versionConsulta)
+        {
             return;
         }
 
@@ -217,7 +232,6 @@ public partial class PersonajesViewModel : ViewModelBase, IRecipient<FavoritoCam
             }
         }
 
-        OnPropertyChanged(nameof(ListaVacia));
         EstaCargando = false;
     }
 
@@ -236,12 +250,22 @@ public partial class PersonajesViewModel : ViewModelBase, IRecipient<FavoritoCam
             return;
         }
 
+        var version = _versionConsulta;
         EstaCargandoMas = true;
 
         var resultado = await _servicio.ObtenerPersonajesAsync(
             pagina: _paginaActual + 1,
             nombre: TextoBusqueda,
             estado: FiltroSeleccionado?.ValorApi);
+
+        EstaCargandoMas = false;
+
+        // Si mientras llegaba esta página empezó otra búsqueda, la lista ya
+        // es otra: agregarle esta página mezclaría resultados de dos consultas.
+        if (version != _versionConsulta)
+        {
+            return;
+        }
 
         if (resultado.EsExitoso && resultado.Datos is not null)
         {
@@ -256,8 +280,6 @@ public partial class PersonajesViewModel : ViewModelBase, IRecipient<FavoritoCam
         {
             MostrarError(resultado.Mensaje);
         }
-
-        EstaCargandoMas = false;
     }
 
     /// <summary>

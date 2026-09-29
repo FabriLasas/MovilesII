@@ -184,8 +184,15 @@ propiedades con notificación y los comandos en tiempo de compilación. El
 `WeakReferenceMessenger` comunica las pantallas sin acoplarlas y sin retener en
 memoria a las que ya no se usan.
 
-`AllowConcurrentExecutions = false` en los comandos impide que dos toques
-seguidos al mismo botón disparen dos llamadas de red simultáneas.
+Los comandos asíncronos que genera el Toolkit se deshabilitan mientras se
+ejecutan, lo que impide que dos toques seguidos al mismo botón disparen dos
+llamadas de red simultáneas. Es el comportamiento por defecto; en el código se
+declara de forma explícita con `AllowConcurrentExecutions = false`.
+
+Cada búsqueda lleva un número de versión: si llega la respuesta de una
+consulta que ya fue reemplazada por otra (por ejemplo, una página del scroll
+infinito que vuelve después de que el usuario escribió algo nuevo), se descarta
+en lugar de mezclarse con los resultados actuales.
 
 La contrapartida es que agrega una dependencia externa y que el código generado
 no está a la vista, lo que dificulta el seguimiento paso a paso durante la

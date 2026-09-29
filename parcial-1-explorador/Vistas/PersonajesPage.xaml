@@ -80,12 +80,16 @@
                                         <VisualState.Setters>
                                             <Setter Property="BackgroundColor" Value="Transparent" />
                                             <Setter Property="Stroke" Value="#D0D0D0" />
+                                            <Setter TargetName="EtiquetaFiltro" Property="Label.TextColor" Value="{AppThemeBinding Light=#1F1F1F, Dark=#FFFFFF}" />
                                         </VisualState.Setters>
                                     </VisualState>
+                                    <!--  Texto blanco sobre el violeta: con el color por defecto
+                                          el contraste en modo claro era insuficiente.  -->
                                     <VisualState x:Name="Selected">
                                         <VisualState.Setters>
                                             <Setter Property="BackgroundColor" Value="#512BD4" />
                                             <Setter Property="Stroke" Value="#512BD4" />
+                                            <Setter TargetName="EtiquetaFiltro" Property="Label.TextColor" Value="#FFFFFF" />
                                         </VisualState.Setters>
                                     </VisualState>
                                 </VisualStateGroup>
@@ -93,6 +97,7 @@
                         </VisualStateManager.VisualStateGroups>
 
                         <Label
+                            x:Name="EtiquetaFiltro"
                             FontSize="13"
                             Text="{Binding Etiqueta}"
                             VerticalOptions="Center" />
