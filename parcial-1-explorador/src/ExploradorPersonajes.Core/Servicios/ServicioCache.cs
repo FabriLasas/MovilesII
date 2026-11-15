@@ -27,9 +27,14 @@ public class ServicioCache : IServicioCache
 {
     private readonly string _carpeta;
 
-    public ServicioCache(IFileSystem sistemaDeArchivos)
+    /// <summary>
+    /// Recibe la carpeta base como texto y no la API de archivos de MAUI: así
+    /// el servicio no depende de la plataforma y en las pruebas se le puede
+    /// pasar una carpeta temporal.
+    /// </summary>
+    public ServicioCache(string carpetaBase)
     {
-        _carpeta = Path.Combine(sistemaDeArchivos.AppDataDirectory, "cache");
+        _carpeta = Path.Combine(carpetaBase, "cache");
         Directory.CreateDirectory(_carpeta);
     }
 

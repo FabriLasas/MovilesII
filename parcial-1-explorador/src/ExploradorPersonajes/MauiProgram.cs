@@ -1,4 +1,5 @@
 using CommunityToolkit.Mvvm.Messaging;
+using ExploradorPersonajes.Plataforma;
 using ExploradorPersonajes.Servicios;
 using ExploradorPersonajes.ViewModels;
 using ExploradorPersonajes.Vistas;
@@ -24,7 +25,6 @@ public static class MauiProgram
         // (Preferences.Default, Connectivity.Current...) dentro del código.
         // Así cada servicio declara de qué depende y puede probarse con dobles.
         builder.Services.AddSingleton(Connectivity.Current);
-        builder.Services.AddSingleton(FileSystem.Current);
         builder.Services.AddSingleton(Preferences.Default);
         builder.Services.AddSingleton(HapticFeedback.Default);
 
@@ -33,12 +33,16 @@ public static class MauiProgram
         builder.Services.AddSingleton<IMessenger>(WeakReferenceMessenger.Default);
 
         // --- Servicios propios ---
+        // Las interfaces viven en el núcleo (ExploradorPersonajes.Core) y las
+        // implementaciones que dependen del dispositivo, en la carpeta
+        // Plataforma de la app. Este es el único lugar donde se unen.
         // Singleton: guardan estado que tiene que ser uno solo en toda la app
         // (la lista de favoritos, el modo sin conexión simulado).
         builder.Services.AddSingleton<IServicioConectividad, ServicioConectividad>();
-        builder.Services.AddSingleton<IServicioCache, ServicioCache>();
+        builder.Services.AddSingleton<IServicioCache>(_ => new ServicioCache(FileSystem.AppDataDirectory));
         builder.Services.AddSingleton<IServicioFavoritos, ServicioFavoritos>();
         builder.Services.AddSingleton<IServicioNavegacion, ServicioNavegacion>();
+        builder.Services.AddSingleton<IServicioHaptica, ServicioHaptica>();
         builder.Services.AddSingleton<ServiciosDeItem>();
 
         // AddHttpClient registra una fábrica que reutiliza los sockets entre
@@ -56,7 +60,9 @@ public static class MauiProgram
 
         // Transient: cada navegación al detalle crea una instancia nueva, para
         // que no queden datos del personaje anterior al abrir otro.
-        builder.Services.AddTransient<DetalleViewModel>();
+        // Se pide DetalleViewModel pero se entrega el adaptador de Shell, que
+        // agrega la recepción de parámetros de navegación.
+        builder.Services.AddTransient<DetalleViewModel, DetalleViewModelShell>();
         builder.Services.AddTransient<DetallePage>();
 
 #if DEBUG

@@ -4,7 +4,7 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:comp="clr-namespace:ExploradorPersonajes.Comportamientos"
-    xmlns:vm="clr-namespace:ExploradorPersonajes.ViewModels"
+    xmlns:vm="clr-namespace:ExploradorPersonajes.ViewModels;assembly=ExploradorPersonajes.Core"
     x:DataType="vm:DetalleViewModel"
     Title="{Binding Titulo}">
 

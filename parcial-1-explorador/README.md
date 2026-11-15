@@ -8,6 +8,10 @@ permite listar, buscar y filtrar personajes, consultar el detalle de cada uno y
 guardar favoritos. Sigue mostrando datos sin conexión a partir de una copia
 local.
 
+> La versión entregada en el **Parcial 1** quedó congelada en la etiqueta
+> [`parcial-1`](https://github.com/FabriLasas/MovilesII/tree/parcial-1/parcial-1-explorador).
+> Esta carpeta contiene la evolución del proyecto para el **Parcial 2**.
+
 ---
 
 ## Cómo ejecutar
@@ -15,42 +19,50 @@ local.
 Requiere el **SDK de .NET 10** con las cargas de trabajo de MAUI instaladas.
 
 ```bash
-dotnet restore
+dotnet restore ExploradorPersonajes.slnx
 ```
 
 En Windows:
 
 ```bash
-dotnet build -f net10.0-windows10.0.19041.0
+dotnet build src/ExploradorPersonajes -f net10.0-windows10.0.19041.0
 ```
 
 En Android (con un emulador o dispositivo conectado):
 
 ```bash
-dotnet build -t:Run -f net10.0-android
+dotnet build src/ExploradorPersonajes -t:Run -f net10.0-android
 ```
 
 ---
 
 ## Arquitectura
 
-El proyecto aplica el patrón **MVVM**. Cada carpeta corresponde a una
-responsabilidad y las dependencias apuntan siempre hacia adentro: las vistas
-conocen a los ViewModels, los ViewModels conocen la interfaz del servicio, y
-nadie conoce a las vistas.
+El proyecto aplica el patrón **MVVM** y está dividido en capas, cada una en su
+propio proyecto. Las dependencias apuntan siempre hacia adentro: la app conoce
+al núcleo, y el núcleo no conoce ni a la app ni a MAUI.
 
 ```
-ExploradorPersonajes/
-├── Modelos/          Objetos de datos y mapeo del JSON
-├── Servicios/        API, caché, favoritos, conectividad y navegación
-├── ViewModels/       Estado y comandos de cada pantalla y de cada tarjeta
-├── Vistas/           XAML, sin lógica en el code-behind
-│   └── Plantillas/   Tarjeta de personaje compartida entre pantallas
-├── Comportamientos/  Animaciones reutilizables declaradas desde XAML
-├── Mensajes/         Avisos entre pantallas (favorito agregado o quitado)
-├── AppShell.xaml     Pestañas y rutas de navegación
-└── MauiProgram.cs    Registro de dependencias
+ExploradorPersonajes.slnx
+└── src/
+    ├── ExploradorPersonajes.Core/   Biblioteca .NET común, sin MAUI
+    │   ├── Modelos/                 Objetos de datos y mapeo del JSON
+    │   ├── Servicios/               API, caché e interfaces de lo que depende del dispositivo
+    │   ├── ViewModels/              Estado y comandos de cada pantalla y de cada tarjeta
+    │   └── Mensajes/                Avisos entre pantallas (favorito agregado o quitado)
+    └── ExploradorPersonajes/        Aplicación .NET MAUI
+        ├── Vistas/                  XAML, sin lógica en el code-behind
+        │   └── Plantillas/          Tarjeta de personaje compartida entre pantallas
+        ├── Plataforma/              Implementaciones con las APIs del dispositivo
+        ├── Comportamientos/         Animaciones reutilizables declaradas desde XAML
+        ├── AppShell.xaml            Pestañas y rutas de navegación
+        └── MauiProgram.cs           Registro de dependencias: une interfaces e implementaciones
 ```
+
+Todo lo que depende del dispositivo (red, vibración, navegación con Shell,
+`Preferences`, la carpeta de datos) está detrás de una interfaz definida en el
+núcleo. Gracias a eso el núcleo se puede probar con xUnit en cualquier sistema
+operativo, sin emulador.
 
 ### Modelos
 
@@ -171,10 +183,12 @@ La navegación pasa por `ServicioNavegacion`, así los ViewModels piden "ir al
 detalle de este personaje" sin conocer Shell ni armar diccionarios de
 parámetros.
 
-`DetalleViewModel` implementa `IQueryAttributable`, la interfaz que Shell invoca
-al completar la navegación. Se eligió por sobre el atributo `[QueryProperty]`
-porque hace explícito en el código dónde y cómo se recibe el parámetro, en lugar
-de depender de un mapeo por reflexión.
+Shell entrega los parámetros llamando a `IQueryAttributable`, una interfaz de
+MAUI. Como `DetalleViewModel` vive en el núcleo, recibe el personaje con un
+método común (`Recibir`), y la app lo envuelve en `DetalleViewModelShell`, que
+agrega la interfaz y sólo delega. Se eligió `IQueryAttributable` por sobre el
+atributo `[QueryProperty]` porque hace explícito en el código dónde y cómo se
+recibe el parámetro, en lugar de depender de un mapeo por reflexión.
 
 ### CommunityToolkit.MVVM
 

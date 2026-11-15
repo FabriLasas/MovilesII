@@ -1,6 +1,4 @@
 using ExploradorPersonajes.Modelos;
-using ExploradorPersonajes.ViewModels;
-using ExploradorPersonajes.Vistas;
 
 namespace ExploradorPersonajes.Servicios;
 
@@ -12,15 +10,4 @@ namespace ExploradorPersonajes.Servicios;
 public interface IServicioNavegacion
 {
     Task IrADetalleAsync(Personaje personaje);
-}
-
-public class ServicioNavegacion : IServicioNavegacion
-{
-    public Task IrADetalleAsync(Personaje personaje)
-    {
-        return Shell.Current.GoToAsync(nameof(DetallePage), new Dictionary<string, object>
-        {
-            [DetalleViewModel.ClaveParametro] = personaje
-        });
-    }
 }

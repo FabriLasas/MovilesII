@@ -12,7 +12,7 @@ namespace ExploradorPersonajes.ViewModels;
 /// </summary>
 public class ServiciosDeItem
 {
-    public ServiciosDeItem(IServicioFavoritos favoritos, IServicioNavegacion navegacion, IHapticFeedback haptica)
+    public ServiciosDeItem(IServicioFavoritos favoritos, IServicioNavegacion navegacion, IServicioHaptica haptica)
     {
         Favoritos = favoritos;
         Navegacion = navegacion;
@@ -21,7 +21,7 @@ public class ServiciosDeItem
 
     public IServicioFavoritos Favoritos { get; }
     public IServicioNavegacion Navegacion { get; }
-    public IHapticFeedback Haptica { get; }
+    public IServicioHaptica Haptica { get; }
 }
 
 /// <summary>
@@ -67,7 +67,7 @@ public partial class PersonajeItemViewModel : ObservableObject
     private void AlternarFavorito()
     {
         EsFavorito = _servicios.Favoritos.Alternar(Modelo);
-        _servicios.Haptica.VibrarSiEsPosible();
+        _servicios.Haptica.ConfirmarToque();
     }
 
     [RelayCommand]

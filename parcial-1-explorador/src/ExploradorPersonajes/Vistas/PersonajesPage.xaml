@@ -3,8 +3,8 @@
     x:Class="ExploradorPersonajes.Vistas.PersonajesPage"
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-    xmlns:modelos="clr-namespace:ExploradorPersonajes.Modelos"
-    xmlns:vm="clr-namespace:ExploradorPersonajes.ViewModels"
+    xmlns:modelos="clr-namespace:ExploradorPersonajes.Modelos;assembly=ExploradorPersonajes.Core"
+    xmlns:vm="clr-namespace:ExploradorPersonajes.ViewModels;assembly=ExploradorPersonajes.Core"
     x:DataType="vm:PersonajesViewModel"
     Title="{Binding Titulo}">
 

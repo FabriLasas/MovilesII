@@ -8,12 +8,12 @@ namespace ExploradorPersonajes.ViewModels;
 /// <summary>
 /// ViewModel de la pantalla de detalle.
 ///
-/// Implementa IQueryAttributable, la interfaz que Shell invoca al completar la
-/// navegación para entregar los parámetros recibidos. Se eligió por sobre el
-/// atributo [QueryProperty] porque hace explícito en el código dónde y cómo se
-/// recibe el parámetro, en lugar de depender de un mapeo por reflexión.
+/// Recibe el personaje con <see cref="Recibir"/>, que toma los parámetros de
+/// navegación como un diccionario común. No implementa IQueryAttributable
+/// porque esa interfaz es de MAUI y el núcleo no depende de la plataforma: la
+/// aplicación la agrega en una subclase que sólo delega en este método.
 /// </summary>
-public partial class DetalleViewModel : ViewModelBase, IQueryAttributable
+public partial class DetalleViewModel : ViewModelBase
 {
     /// <summary>
     /// Clave del parámetro de navegación. Constante compartida para que el
@@ -22,9 +22,9 @@ public partial class DetalleViewModel : ViewModelBase, IQueryAttributable
     public const string ClaveParametro = "personaje";
 
     private readonly IServicioFavoritos _favoritos;
-    private readonly IHapticFeedback _haptica;
+    private readonly IServicioHaptica _haptica;
 
-    public DetalleViewModel(IServicioFavoritos favoritos, IHapticFeedback haptica)
+    public DetalleViewModel(IServicioFavoritos favoritos, IServicioHaptica haptica)
     {
         _favoritos = favoritos;
         _haptica = haptica;
@@ -39,9 +39,14 @@ public partial class DetalleViewModel : ViewModelBase, IQueryAttributable
 
     public string TextoBotonFavorito => EsFavorito ? "★  Quitar de favoritos" : "☆  Agregar a favoritos";
 
-    public void ApplyQueryAttributes(IDictionary<string, object> query)
+    /// <summary>
+    /// Recibe los parámetros de navegación. Valida que llegue un personaje en
+    /// lugar de suponerlo: si la navegación se armó mal, se informa en
+    /// pantalla en vez de fallar con una excepción.
+    /// </summary>
+    public void Recibir(IDictionary<string, object> parametros)
     {
-        if (query.TryGetValue(ClaveParametro, out var valor) && valor is Personaje seleccionado)
+        if (parametros.TryGetValue(ClaveParametro, out var valor) && valor is Personaje seleccionado)
         {
             Personaje = seleccionado;
             Titulo = seleccionado.Nombre;
@@ -64,6 +69,6 @@ public partial class DetalleViewModel : ViewModelBase, IQueryAttributable
         if (Personaje is null) return;
 
         EsFavorito = _favoritos.Alternar(Personaje);
-        _haptica.VibrarSiEsPosible();
+        _haptica.ConfirmarToque();
     }
 }

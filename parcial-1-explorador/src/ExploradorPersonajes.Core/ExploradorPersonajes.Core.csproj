@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<!--
+		Núcleo de la aplicación: modelos, servicios y ViewModels.
+		Es una biblioteca .NET común, sin ninguna dependencia de MAUI, por dos
+		motivos: se puede probar con xUnit en cualquier sistema operativo y
+		obliga a que todo lo que depende del dispositivo (red, vibración,
+		navegación, almacenamiento) pase por una interfaz.
+	-->
+	<PropertyGroup>
+		<TargetFramework>net10.0</TargetFramework>
+		<RootNamespace>ExploradorPersonajes</RootNamespace>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+	</ItemGroup>
+
+	<!-- Permite que el proyecto de pruebas use las clases internas. -->
+	<ItemGroup>
+		<InternalsVisibleTo Include="ExploradorPersonajes.Tests" />
+	</ItemGroup>
+
+</Project>

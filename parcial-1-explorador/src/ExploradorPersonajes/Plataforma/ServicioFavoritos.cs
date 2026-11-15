@@ -1,22 +1,9 @@
 using CommunityToolkit.Mvvm.Messaging;
 using ExploradorPersonajes.Mensajes;
 using ExploradorPersonajes.Modelos;
+using ExploradorPersonajes.Servicios;
 
-namespace ExploradorPersonajes.Servicios;
-
-/// <summary>
-/// Administra los personajes marcados como favoritos.
-/// </summary>
-public interface IServicioFavoritos
-{
-    bool EsFavorito(int id);
-
-    /// <summary>Marca o desmarca el personaje. Devuelve el estado nuevo.</summary>
-    bool Alternar(Personaje personaje);
-
-    /// <summary>Ids en el orden en que el usuario los fue marcando.</summary>
-    IReadOnlyList<int> ObtenerIds();
-}
+namespace ExploradorPersonajes.Plataforma;
 
 /// <summary>
 /// Persiste sólo los ids, no los personajes completos: los datos se piden a
