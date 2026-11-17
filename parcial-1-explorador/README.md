@@ -34,6 +34,12 @@ En Android (con un emulador o dispositivo conectado):
 dotnet build src/ExploradorPersonajes -t:Run -f net10.0-android
 ```
 
+Pruebas automatizadas (no necesitan emulador ni las cargas de trabajo de MAUI):
+
+```bash
+dotnet test tests/ExploradorPersonajes.Tests
+```
+
 ---
 
 ## Arquitectura
@@ -226,6 +232,32 @@ vibración (una PC) el pedido se ignora sin afectar la acción.
 
 La tarjeta está definida una sola vez en `Vistas/Plantillas` y la usan tanto la
 lista como la pestaña de favoritos.
+
+---
+
+## Pruebas
+
+El proyecto `tests/ExploradorPersonajes.Tests` usa **xUnit** y **Moq**, y
+referencia sólo al núcleo. Las pruebas siguen la estructura *Arrange, Act,
+Assert* y se nombran `Metodo_Escenario_ResultadoEsperado`.
+
+```
+tests/ExploradorPersonajes.Tests/
+├── Dobles/        Reemplazos de la red, datos de ejemplo y mocks compartidos
+├── Modelos/       Mapeo del JSON y propiedades calculadas
+├── Servicios/     Clasificación de errores, caché y ResultadoApi
+└── ViewModels/    Estado de cada pantalla al ejecutar sus comandos
+```
+
+| Qué se prueba | Cómo se aísla |
+|---|---|
+| `ServicioPersonajes`: que 200, 404, 4xx, 5xx, JSON dañado, timeout y falta de red terminen en el tipo de error correcto, y cuándo se usa la copia guardada | `ManejadorHttpFalso` reemplaza la red; conectividad y caché son mocks |
+| `ServicioCache`: guardar, leer y reemplazar copias | Una carpeta temporal por prueba, borrada al terminar |
+| ViewModels: mensajes, lista, paginación, búsqueda con espera, descarte de respuestas viejas, favoritos y vibración | La API, los favoritos, la navegación y la vibración son mocks |
+
+La red no se usa nunca: así las pruebas son rápidas, no fallan si la API está
+caída y pueden provocar errores (un 500, un timeout) que en la API real no se
+pueden generar a voluntad.
 
 ---
 

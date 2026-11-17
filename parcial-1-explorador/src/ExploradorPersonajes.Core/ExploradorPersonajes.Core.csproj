@@ -18,9 +18,4 @@
 		<PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
 	</ItemGroup>
 
-	<!-- Permite que el proyecto de pruebas use las clases internas. -->
-	<ItemGroup>
-		<InternalsVisibleTo Include="ExploradorPersonajes.Tests" />
-	</ItemGroup>
-
 </Project>

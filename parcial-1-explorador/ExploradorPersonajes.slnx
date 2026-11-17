@@ -3,4 +3,7 @@
     <Project Path="src/ExploradorPersonajes.Core/ExploradorPersonajes.Core.csproj" />
     <Project Path="src/ExploradorPersonajes/ExploradorPersonajes.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/ExploradorPersonajes.Tests/ExploradorPersonajes.Tests.csproj" />
+  </Folder>
 </Solution>
