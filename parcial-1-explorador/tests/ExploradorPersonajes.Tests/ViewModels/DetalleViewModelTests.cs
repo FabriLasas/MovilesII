@@ -51,14 +51,14 @@ public class DetalleViewModelTests
     }
 
     [Fact]
-    public void AlternarFavorito_MarcaElPersonajeYVibra()
+    public async Task AlternarFavorito_MarcaElPersonajeYVibra()
     {
         var personaje = DatosDePrueba.Personaje(1);
-        _s.Favoritos.Setup(f => f.Alternar(personaje)).Returns(true);
+        _s.Favoritos.Setup(f => f.AlternarAsync(personaje)).ReturnsAsync(true);
         var vm = _s.CrearDetalleViewModel();
         vm.Recibir(Parametros(personaje));
 
-        vm.AlternarFavoritoCommand.Execute(null);
+        await vm.AlternarFavoritoCommand.ExecuteAsync(null);
 
         Assert.True(vm.EsFavorito);
         Assert.Equal("★  Quitar de favoritos", vm.TextoBotonFavorito);
@@ -66,13 +66,13 @@ public class DetalleViewModelTests
     }
 
     [Fact]
-    public void AlternarFavorito_SinPersonaje_NoHaceNada()
+    public async Task AlternarFavorito_SinPersonaje_NoHaceNada()
     {
         var vm = _s.CrearDetalleViewModel();
 
-        vm.AlternarFavoritoCommand.Execute(null);
+        await vm.AlternarFavoritoCommand.ExecuteAsync(null);
 
-        _s.Favoritos.Verify(f => f.Alternar(It.IsAny<Personaje>()), Times.Never);
+        _s.Favoritos.Verify(f => f.AlternarAsync(It.IsAny<Personaje>()), Times.Never);
         _s.Haptica.Verify(h => h.ConfirmarToque(), Times.Never);
     }
 }

@@ -64,9 +64,9 @@ public partial class PersonajeItemViewModel : ObservableObject
     public string TextoAccionFavorito => EsFavorito ? "Quitar" : "Favorito";
 
     [RelayCommand]
-    private void AlternarFavorito()
+    private async Task AlternarFavoritoAsync()
     {
-        EsFavorito = _servicios.Favoritos.Alternar(Modelo);
+        EsFavorito = await _servicios.Favoritos.AlternarAsync(Modelo);
         _servicios.Haptica.ConfirmarToque();
     }
 

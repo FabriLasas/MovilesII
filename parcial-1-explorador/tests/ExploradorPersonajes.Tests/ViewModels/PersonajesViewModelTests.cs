@@ -32,6 +32,17 @@ public class PersonajesViewModelTests
     }
 
     [Fact]
+    public async Task CargarPersonajes_CargaLosFavoritosAntesDeArmarLasTarjetas()
+    {
+        _s.ResponderPagina(1, DatosDePrueba.PaginaExitosa(1, false, 1));
+        var vm = _s.CrearPersonajesViewModel();
+
+        await vm.CargarPersonajesCommand.ExecuteAsync(null);
+
+        _s.Favoritos.Verify(f => f.InicializarAsync(), Times.Once);
+    }
+
+    [Fact]
     public async Task CargarPersonajes_ErrorDelServidor_MuestraElMensajeComoError()
     {
         _s.ResponderPagina(1, ResultadoApi<RespuestaPaginada>.Fallo(TipoError.ErrorServidor, "El servidor tuvo un problema interno. (Error 500)", 500));

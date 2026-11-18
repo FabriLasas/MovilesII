@@ -180,6 +180,11 @@ public partial class PersonajesViewModel : ViewModelBase, IRecipient<FavoritoCam
         EstaCargando = true;
         MostrarInfo("Buscando...");
 
+        // Las tarjetas consultan si cada personaje es favorito al crearse, así
+        // que los favoritos guardados tienen que estar cargados antes. Después
+        // de la primera vez, esta llamada termina al instante.
+        await _serviciosDeItem.Favoritos.InicializarAsync();
+
         ResultadoApi<RespuestaPaginada> resultado;
         try
         {

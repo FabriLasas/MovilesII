@@ -9,13 +9,13 @@ public class PersonajeItemViewModelTests
     private readonly ServiciosSimulados _s = new();
 
     [Fact]
-    public void AlternarFavorito_ActualizaLaEstrellaYPideLaVibracion()
+    public async Task AlternarFavorito_ActualizaLaEstrellaYPideLaVibracion()
     {
         var personaje = DatosDePrueba.Personaje(1);
-        _s.Favoritos.Setup(f => f.Alternar(personaje)).Returns(true);
+        _s.Favoritos.Setup(f => f.AlternarAsync(personaje)).ReturnsAsync(true);
         var item = new PersonajeItemViewModel(personaje, _s.DeItem());
 
-        item.AlternarFavoritoCommand.Execute(null);
+        await item.AlternarFavoritoCommand.ExecuteAsync(null);
 
         Assert.True(item.EsFavorito);
         Assert.Equal("★", item.IconoFavorito);

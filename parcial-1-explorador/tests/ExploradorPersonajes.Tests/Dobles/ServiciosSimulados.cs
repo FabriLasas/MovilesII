@@ -27,7 +27,7 @@ public class ServiciosSimulados
 
     public ServiciosSimulados()
     {
-        Favoritos.Setup(f => f.ObtenerIds()).Returns(Array.Empty<int>());
+        Favoritos.Setup(f => f.ObtenerTodos()).Returns(Array.Empty<Personaje>());
         Navegacion.Setup(n => n.IrADetalleAsync(It.IsAny<Personaje>())).Returns(Task.CompletedTask);
     }
 

@@ -55,7 +55,8 @@ ExploradorPersonajes.slnx
 └── src/
     ├── ExploradorPersonajes.Core/   Biblioteca .NET común, sin MAUI
     │   ├── Modelos/                 Objetos de datos y mapeo del JSON
-    │   ├── Servicios/               API, caché e interfaces de lo que depende del dispositivo
+    │   ├── Datos/                   Base SQLite: tabla y repositorio de favoritos
+    │   ├── Servicios/               API, caché, favoritos e interfaces de lo que depende del dispositivo
     │   ├── ViewModels/              Estado y comandos de cada pantalla y de cada tarjeta
     │   └── Mensajes/                Avisos entre pantallas (favorito agregado o quitado)
     └── ExploradorPersonajes/        Aplicación .NET MAUI
@@ -68,7 +69,7 @@ ExploradorPersonajes.slnx
 ```
 
 Todo lo que depende del dispositivo (red, vibración, navegación con Shell,
-`Preferences`, la carpeta de datos) está detrás de una interfaz definida en el
+la carpeta de datos) está detrás de una interfaz definida en el
 núcleo. Gracias a eso el núcleo se puede probar con xUnit en cualquier sistema
 operativo, sin emulador.
 
@@ -104,7 +105,7 @@ envuelve.
 |---|---|
 | `ServicioPersonajes` | Único punto que habla con la red; clasifica los errores |
 | `ServicioCache` | Guarda en disco las últimas respuestas exitosas |
-| `ServicioFavoritos` | Persiste los ids favoritos con `Preferences` |
+| `ServicioFavoritos` | Favoritos guardados en SQLite, con una copia en memoria para consultas instantáneas |
 | `ServicioConectividad` | Estado de la red, con modo sin conexión simulado |
 | `ServicioNavegacion` | Encapsula Shell para que los ViewModels no lo conozcan |
 
@@ -162,11 +163,26 @@ depender de que el servidor falle ni de apagar el wifi:
 
 ### Favoritos
 
-Se guardan sólo los ids, en `Preferences`: los datos se piden a la API al
-mostrarlos, así que siempre están actualizados.
+Se guardan en una base **SQLite** del dispositivo (`explorador.db3`), con los
+datos de cada personaje y el orden en que se marcaron. La pestaña Favoritos
+muestra lo guardado al instante, haya red o no, y después pide los datos
+actuales a la API para refrescarlos.
 
-La pestaña los trae en **una sola llamada** (`/character/1,5,12`). El endpoint
-tiene tres particularidades, verificadas contra la API:
+| Pieza | Rol |
+|---|---|
+| `FavoritoEntidad` | Fila de la tabla. Es plana y separada de `Personaje`, que refleja el JSON de la API |
+| `IRepositorioFavoritos` / `RepositorioFavoritosSqlite` | Alta, baja, lectura en orden y actualización de datos, con transacciones |
+| `ServicioFavoritos` | Lógica de favoritos sobre el repositorio, con una copia en memoria |
+
+**Cambio respecto del Parcial 1.** Antes se guardaban sólo los ids en
+`Preferences` y los datos se pedían a la API cada vez: sin conexión, la pestaña
+dependía de que hubiera una copia en caché de esa consulta exacta. Al abrir la
+versión nueva, los ids guardados por la anterior se pasan solos a la base (se
+piden sus datos a la API y recién entonces se borran de `Preferences`; si no hay
+red, se reintenta en el próximo inicio).
+
+La actualización se pide en **una sola llamada** (`/character/1,5,12`). El
+endpoint tiene tres particularidades, verificadas contra la API:
 
 | Comportamiento | Cómo se resuelve |
 |---|---|
@@ -248,6 +264,7 @@ tests/ExploradorPersonajes.Tests/
 ├── Dobles/        Reemplazos de la red, datos de ejemplo y mocks compartidos
 ├── Modelos/       Mapeo del JSON y propiedades calculadas
 ├── Servicios/     Clasificación de errores, caché y ResultadoApi
+├── Integracion/   Repositorio y servicio de favoritos contra SQLite real en memoria
 └── ViewModels/    Estado de cada pantalla al ejecutar sus comandos
 ```
 
@@ -255,6 +272,7 @@ tests/ExploradorPersonajes.Tests/
 |---|---|
 | `ServicioPersonajes`: que 200, 404, 4xx, 5xx, JSON dañado, timeout y falta de red terminen en el tipo de error correcto, y cuándo se usa la copia guardada | `ManejadorHttpFalso` reemplaza la red; conectividad y caché son mocks |
 | `ServicioCache`: guardar, leer y reemplazar copias | Una carpeta temporal por prueba, borrada al terminar |
+| **Integración**: el repositorio y el servicio de favoritos contra SQLite real (alta, baja, orden, duplicados, actualización, migración desde la versión anterior y persistencia al reabrir) | Base SQLite **en memoria**, con un nombre único por prueba para que las que corren en paralelo no compartan datos |
 | ViewModels: mensajes, lista, paginación, búsqueda con espera, descarte de respuestas viejas, favoritos y vibración | La API, los favoritos, la navegación y la vibración son mocks |
 
 La red no se usa nunca: así las pruebas son rápidas, no fallan si la API está

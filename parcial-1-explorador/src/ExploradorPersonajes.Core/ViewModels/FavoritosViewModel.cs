@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
 using ExploradorPersonajes.Mensajes;
+using ExploradorPersonajes.Modelos;
 using ExploradorPersonajes.Servicios;
 
 namespace ExploradorPersonajes.ViewModels;
@@ -10,10 +11,10 @@ namespace ExploradorPersonajes.ViewModels;
 /// <summary>
 /// ViewModel de la pestaña de favoritos.
 ///
-/// La primera carga trae a todos los favoritos en UNA sola llamada a la API.
-/// Después se mantiene al día escuchando los cambios, sin volver a consultar:
-/// el mensaje trae el personaje completo, así que agregarlo o quitarlo de la
-/// lista funciona incluso sin conexión.
+/// Muestra al instante lo guardado en la base del dispositivo, así que la
+/// pestaña funciona sin conexión. Después pide los datos actuales a la API en
+/// UNA sola llamada para refrescarlos. Los cambios posteriores llegan por
+/// mensaje, con el personaje completo, sin volver a consultar.
 /// </summary>
 public partial class FavoritosViewModel : ViewModelBase, IRecipient<FavoritoCambiadoMensaje>
 {
@@ -70,56 +71,48 @@ public partial class FavoritosViewModel : ViewModelBase, IRecipient<FavoritoCamb
 
     private async Task CargarAsync()
     {
-        var ids = _favoritos.ObtenerIds();
+        await _favoritos.InicializarAsync();
+        var guardados = _favoritos.ObtenerTodos();
 
-        if (ids.Count == 0)
+        // 1) Lo guardado se muestra enseguida, haya red o no.
+        Mostrar(guardados);
+        InformarCantidad();
+
+        if (guardados.Count == 0)
         {
-            Favoritos.Clear();
-            OcultarAvisoCache();
-            InformarCantidad();
             return;
         }
 
+        // 2) Se piden los datos actuales a la API para refrescar lo guardado
+        //    (un personaje pudo cambiar de ubicación o de estado).
         EstaCargando = true;
-        MostrarInfo("Cargando favoritos...");
+        var resultado = await _servicio.ObtenerPersonajesPorIdsAsync(guardados.Select(p => p.Id).ToList());
+        EstaCargando = false;
 
-        var resultado = await _servicio.ObtenerPersonajesPorIdsAsync(ids);
-
-        if (resultado.EsExitoso && resultado.Datos is not null)
+        if (resultado.EsExitoso && !resultado.DesdeCache && resultado.Datos is not null)
         {
-            // Mientras viajaba la respuesta el usuario pudo marcar o desmarcar
-            // favoritos (esos cambios llegan por mensaje). Se reconcilia contra
-            // la lista vigente para no perder ni resucitar ninguno.
-            var vigentes = _favoritos.ObtenerIds();
-            var recibidos = resultado.Datos.Select(p => p.Id).ToHashSet();
-            var agregadosMientras = Favoritos
-                .Where(f => !recibidos.Contains(f.Id) && vigentes.Contains(f.Id))
-                .Select(f => f.Modelo)
-                .ToList();
+            await _favoritos.ActualizarDatosAsync(resultado.Datos);
 
-            Favoritos.Clear();
-            foreach (var personaje in resultado.Datos.Where(p => vigentes.Contains(p.Id)).Concat(agregadosMientras))
-            {
-                Favoritos.Add(new PersonajeItemViewModel(personaje, _serviciosDeItem));
-            }
-
-            if (resultado.DesdeCache && resultado.FechaCache is { } fecha)
-            {
-                MostrarAvisoCache(fecha);
-            }
-            else
-            {
-                OcultarAvisoCache();
-            }
-
+            // Se vuelve a leer del servicio y no de la respuesta: mientras
+            // viajaba, el usuario pudo marcar o desmarcar favoritos.
+            Mostrar(_favoritos.ObtenerTodos());
             InformarCantidad();
         }
         else
         {
-            MostrarError(resultado.Mensaje);
+            // No es un error para el usuario: los favoritos se ven igual,
+            // sólo que con los datos de la última vez.
+            MostrarInfo("No se pudieron actualizar los datos: se muestran los guardados en el dispositivo.");
         }
+    }
 
-        EstaCargando = false;
+    private void Mostrar(IEnumerable<Personaje> personajes)
+    {
+        Favoritos.Clear();
+        foreach (var personaje in personajes)
+        {
+            Favoritos.Add(new PersonajeItemViewModel(personaje, _serviciosDeItem));
+        }
     }
 
     private void InformarCantidad()

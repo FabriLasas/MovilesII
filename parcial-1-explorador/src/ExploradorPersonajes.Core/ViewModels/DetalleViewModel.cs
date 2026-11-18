@@ -64,11 +64,11 @@ public partial class DetalleViewModel : ViewModelBase
     /// de la tarjeta ya aparece actualizada sin recargar nada.
     /// </summary>
     [RelayCommand]
-    private void AlternarFavorito()
+    private async Task AlternarFavoritoAsync()
     {
         if (Personaje is null) return;
 
-        EsFavorito = _favoritos.Alternar(Personaje);
+        EsFavorito = await _favoritos.AlternarAsync(Personaje);
         _haptica.ConfirmarToque();
     }
 }

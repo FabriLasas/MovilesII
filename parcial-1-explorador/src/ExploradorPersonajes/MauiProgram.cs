@@ -1,9 +1,11 @@
 using CommunityToolkit.Mvvm.Messaging;
+using ExploradorPersonajes.Datos;
 using ExploradorPersonajes.Plataforma;
 using ExploradorPersonajes.Servicios;
 using ExploradorPersonajes.ViewModels;
 using ExploradorPersonajes.Vistas;
 using Microsoft.Extensions.Logging;
+using SQLite;
 
 namespace ExploradorPersonajes;
 
@@ -41,6 +43,17 @@ public static class MauiProgram
         builder.Services.AddSingleton<IServicioConectividad, ServicioConectividad>();
         builder.Services.AddSingleton<IServicioCache>(_ => new ServicioCache(FileSystem.AppDataDirectory));
         builder.Services.AddSingleton<IServicioFavoritos, ServicioFavoritos>();
+        builder.Services.AddSingleton<IFavoritosAnteriores, FavoritosEnPreferencias>();
+
+        // --- Base de datos local ---
+        // Una sola conexión para toda la app, sobre un archivo en la carpeta
+        // de datos (se borra sólo al desinstalar). SharedCache permite que
+        // varios repositorios usen la misma base sin bloquearse.
+        builder.Services.AddSingleton(_ => new SQLiteAsyncConnection(
+            Path.Combine(FileSystem.AppDataDirectory, "explorador.db3"),
+            SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.Create | SQLiteOpenFlags.SharedCache));
+        builder.Services.AddSingleton<IRepositorioFavoritos>(sp =>
+            new RepositorioFavoritosSqlite(sp.GetRequiredService<SQLiteAsyncConnection>()));
         builder.Services.AddSingleton<IServicioNavegacion, ServicioNavegacion>();
         builder.Services.AddSingleton<IServicioHaptica, ServicioHaptica>();
         builder.Services.AddSingleton<ServiciosDeItem>();
