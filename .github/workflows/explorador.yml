@@ -1,0 +1,148 @@
+# Integración continua del Explorador de Personajes.
+#
+# En cada push o pull request que toque el proyecto:
+#   1. "pruebas": restaura, compila y ejecuta las pruebas automatizadas.
+#   2. "compilar": si las pruebas pasan, genera la aplicación para Android y
+#      Windows en paralelo (matriz) y publica cada resultado como artefacto
+#      descargable desde la pestaña Actions.
+#
+# Los paquetes NuGet se guardan en caché entre ejecuciones: la restauración
+# pasa de descargar todo a reutilizar lo ya bajado mientras los .csproj no
+# cambien.
+
+name: Explorador de Personajes
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "parcial-1-explorador/**"
+      - ".github/workflows/explorador.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "parcial-1-explorador/**"
+      - ".github/workflows/explorador.yml"
+  # Permite ejecutarlo a mano desde la pestaña Actions.
+  workflow_dispatch:
+
+# Si llega un push nuevo mientras corre uno anterior de la misma rama, el
+# anterior se cancela: su resultado ya no interesa.
+concurrency:
+  group: explorador-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_VERSION: "10.0.x"
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  # Carpeta fija para los paquetes, así la caché sabe qué guardar.
+  NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
+
+defaults:
+  run:
+    working-directory: parcial-1-explorador
+
+jobs:
+  pruebas:
+    name: Pruebas
+    runs-on: ubuntu-latest
+    steps:
+      - name: Obtener el código
+        uses: actions/checkout@v5
+
+      - name: Instalar .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Caché de paquetes NuGet
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.NUGET_PACKAGES }}
+          key: nuget-pruebas-${{ runner.os }}-${{ hashFiles('parcial-1-explorador/**/*.csproj') }}
+          restore-keys: nuget-pruebas-${{ runner.os }}-
+
+      # Las pruebas referencian sólo al núcleo, que es una biblioteca .NET
+      # común: no hace falta instalar las cargas de trabajo de MAUI.
+      - name: Restaurar
+        run: dotnet restore tests/ExploradorPersonajes.Tests
+
+      - name: Compilar
+        run: dotnet build tests/ExploradorPersonajes.Tests --no-restore -c Release
+
+      - name: Ejecutar pruebas
+        run: >
+          dotnet test tests/ExploradorPersonajes.Tests --no-build -c Release
+          --logger "trx;LogFileName=resultados.trx"
+          --logger "console;verbosity=normal"
+          --results-directory resultados-pruebas
+
+      # Se sube aunque fallen, que es justamente cuando más sirve el detalle.
+      - name: Publicar resultados de las pruebas
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: resultados-pruebas
+          path: parcial-1-explorador/resultados-pruebas
+          retention-days: 14
+
+  compilar:
+    name: Compilar ${{ matrix.plataforma }}
+    needs: pruebas
+    runs-on: ${{ matrix.sistema }}
+    strategy:
+      # Si falla una plataforma, la otra termina igual: se ve cuál anda.
+      fail-fast: false
+      matrix:
+        include:
+          - plataforma: Android
+            sistema: ubuntu-latest
+            carga: maui-android
+            framework: net10.0-android
+            opciones: -p:AndroidPackageFormat=apk
+            artefacto: explorador-android
+          - plataforma: Windows
+            sistema: windows-latest
+            # El proyecto declara también el destino Android, y para
+            # restaurarlo en Windows hace falta esa carga instalada.
+            carga: maui-windows maui-android
+            framework: net10.0-windows10.0.19041.0
+            opciones: -p:WindowsPackageType=None -p:RuntimeIdentifierOverride=win-x64
+            artefacto: explorador-windows
+    steps:
+      - name: Obtener el código
+        uses: actions/checkout@v5
+
+      - name: Instalar .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Instalar la carga de trabajo de MAUI
+        run: dotnet workload install ${{ matrix.carga }}
+
+      - name: Caché de paquetes NuGet
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.NUGET_PACKAGES }}
+          key: nuget-${{ matrix.plataforma }}-${{ hashFiles('parcial-1-explorador/**/*.csproj') }}
+          restore-keys: nuget-${{ matrix.plataforma }}-
+
+      # publish restaura y compila antes de generar el paquete.
+      - name: Publicar en Release
+        run: >
+          dotnet publish src/ExploradorPersonajes
+          -f ${{ matrix.framework }} -c Release
+          ${{ matrix.opciones }}
+          -p:ApplicationVersion=${{ github.run_number }}
+          -o salida
+
+      - name: Subir artefacto
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artefacto }}
+          # En Android sólo interesa el APK firmado; en Windows, la carpeta entera.
+          path: ${{ matrix.plataforma == 'Android' && 'parcial-1-explorador/salida/*-Signed.apk' || 'parcial-1-explorador/salida' }}
+          if-no-files-found: error
+          retention-days: 14

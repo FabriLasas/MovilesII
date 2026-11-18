@@ -1,5 +1,7 @@
 # Explorador de Personajes
 
+[![Explorador de Personajes](https://github.com/FabriLasas/MovilesII/actions/workflows/explorador.yml/badge.svg)](https://github.com/FabriLasas/MovilesII/actions/workflows/explorador.yml)
+
 Aplicación **.NET MAUI** desarrollada como Parte B del primer examen parcial de
 *Desarrollo de Aplicaciones Móviles 2*.
 
@@ -258,6 +260,37 @@ tests/ExploradorPersonajes.Tests/
 La red no se usa nunca: así las pruebas son rápidas, no fallan si la API está
 caída y pueden provocar errores (un 500, un timeout) que en la API real no se
 pueden generar a voluntad.
+
+---
+
+## Integración continua
+
+El workflow [`.github/workflows/explorador.yml`](../.github/workflows/explorador.yml)
+corre en GitHub Actions con cada push o pull request que modifique esta
+carpeta, y también se puede lanzar a mano.
+
+```
+push ──► Pruebas (ubuntu) ──┬──► Compilar Android (ubuntu)  ──► APK firmado
+                            └──► Compilar Windows (windows) ──► carpeta de la app
+```
+
+| Etapa | Qué hace |
+|---|---|
+| **Pruebas** | Restaura, compila y ejecuta `dotnet test`. Publica los resultados (`.trx`) como artefacto, incluso si alguna prueba falla. |
+| **Compilar** | Sólo corre si las pruebas pasan. Una **matriz** genera Android y Windows en paralelo, cada una en su sistema operativo, con `dotnet publish` en Release. |
+| **Artefactos** | El APK y la versión de Windows quedan para descargar desde la ejecución durante 14 días. |
+| **Caché** | Los paquetes NuGet se guardan entre ejecuciones; la clave cambia sólo si cambia algún `.csproj`. |
+
+Decisiones:
+
+- Las pruebas corren sin instalar MAUI, porque sólo dependen del núcleo. Así
+  la etapa que más se repite es también la más rápida.
+- El filtro por rutas evita que un cambio en otra actividad del repositorio
+  dispare este workflow.
+- El número de ejecución se usa como `ApplicationVersion`: cada APK generado
+  tiene un número de versión mayor que el anterior, como exige Android para
+  instalarlo encima.
+- Si llega un push nuevo mientras corre uno anterior, el anterior se cancela.
 
 ---
 
