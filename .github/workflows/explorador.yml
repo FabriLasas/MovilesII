@@ -57,7 +57,7 @@ jobs:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
       - name: Caché de paquetes NuGet
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ${{ env.NUGET_PACKAGES }}
           key: nuget-pruebas-${{ runner.os }}-${{ hashFiles('parcial-1-explorador/**/*.csproj') }}
@@ -81,7 +81,7 @@ jobs:
       # Se sube aunque fallen, que es justamente cuando más sirve el detalle.
       - name: Publicar resultados de las pruebas
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: resultados-pruebas
           path: parcial-1-explorador/resultados-pruebas
@@ -123,7 +123,7 @@ jobs:
         run: dotnet workload install ${{ matrix.carga }}
 
       - name: Caché de paquetes NuGet
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ${{ env.NUGET_PACKAGES }}
           key: nuget-${{ matrix.plataforma }}-${{ hashFiles('parcial-1-explorador/**/*.csproj') }}
@@ -139,7 +139,7 @@ jobs:
           -o salida
 
       - name: Subir artefacto
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.artefacto }}
           # En Android sólo interesa el APK firmado; en Windows, la carpeta entera.
