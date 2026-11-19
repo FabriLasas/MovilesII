@@ -55,7 +55,8 @@ ExploradorPersonajes.slnx
 └── src/
     ├── ExploradorPersonajes.Core/   Biblioteca .NET común, sin MAUI
     │   ├── Modelos/                 Objetos de datos y mapeo del JSON
-    │   ├── Datos/                   Base SQLite: tabla y repositorio de favoritos
+    │   ├── Datos/                   Base SQLite: tablas y repositorios de favoritos y avistamientos
+    │   ├── Validaciones/            Reglas comunes y validadores de cada formulario
     │   ├── Servicios/               API, caché, favoritos e interfaces de lo que depende del dispositivo
     │   ├── ViewModels/              Estado y comandos de cada pantalla y de cada tarjeta
     │   └── Mensajes/                Avisos entre pantallas (favorito agregado o quitado)
@@ -236,6 +237,22 @@ La contrapartida es que agrega una dependencia externa y que el código generado
 no está a la vista, lo que dificulta el seguimiento paso a paso durante la
 depuración.
 
+### Validaciones
+
+Las reglas están centralizadas en el núcleo, en `Validaciones/`, y no en las
+pantallas: se aplican igual desde donde se use el dato y se prueban sin
+interfaz gráfica.
+
+| Pieza | Rol |
+|---|---|
+| `ReglasComunes` | Reglas reutilizables: dato obligatorio, largo mínimo y máximo, rango de latitud y longitud, id válido. Cada una devuelve el mensaje de error o `null` |
+| `ResultadoValidacion` | Junta **todos** los errores, cada uno asociado a su campo, para marcarlos de una sola vez debajo del dato que corresponde |
+| `ValidadorAvistamiento` | Reglas de negocio de un avistamiento: foto obligatoria, nota de 3 a 200 caracteres, ubicación opcional pero completa y dentro de rango |
+
+La búsqueda de personajes usa la misma regla de largo máximo: un texto de más de
+50 caracteres no se envía a la API (el nombre más largo del catálogo tiene 46) y
+se informa el error en lugar de hacer una llamada inútil.
+
 ### Interacción
 
 Las animaciones necesitan acceso al control visual, que el ViewModel no debe
@@ -264,7 +281,8 @@ tests/ExploradorPersonajes.Tests/
 ├── Dobles/        Reemplazos de la red, datos de ejemplo y mocks compartidos
 ├── Modelos/       Mapeo del JSON y propiedades calculadas
 ├── Servicios/     Clasificación de errores, caché y ResultadoApi
-├── Integracion/   Repositorio y servicio de favoritos contra SQLite real en memoria
+├── Integracion/   Repositorios y servicio de favoritos contra SQLite real en memoria
+├── Validaciones/  Reglas comunes y validador de avistamientos
 └── ViewModels/    Estado de cada pantalla al ejecutar sus comandos
 ```
 
@@ -272,7 +290,8 @@ tests/ExploradorPersonajes.Tests/
 |---|---|
 | `ServicioPersonajes`: que 200, 404, 4xx, 5xx, JSON dañado, timeout y falta de red terminen en el tipo de error correcto, y cuándo se usa la copia guardada | `ManejadorHttpFalso` reemplaza la red; conectividad y caché son mocks |
 | `ServicioCache`: guardar, leer y reemplazar copias | Una carpeta temporal por prueba, borrada al terminar |
-| **Integración**: el repositorio y el servicio de favoritos contra SQLite real (alta, baja, orden, duplicados, actualización, migración desde la versión anterior y persistencia al reabrir) | Base SQLite **en memoria**, con un nombre único por prueba para que las que corren en paralelo no compartan datos |
+| **Integración**: los repositorios de favoritos y avistamientos y el servicio de favoritos contra SQLite real (alta, baja, orden, duplicados, actualización, migración desde la versión anterior y persistencia al reabrir) | Base SQLite **en memoria**, con un nombre único por prueba para que las que corren en paralelo no compartan datos |
+| Validaciones: cada regla en sus valores límite (2, 3, 200 y 201 caracteres; ±90 y ±180 grados) y que se informen todos los errores juntos | No necesitan aislamiento: son funciones puras |
 | ViewModels: mensajes, lista, paginación, búsqueda con espera, descarte de respuestas viejas, favoritos y vibración | La API, los favoritos, la navegación y la vibración son mocks |
 
 La red no se usa nunca: así las pruebas son rápidas, no fallan si la API está

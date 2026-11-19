@@ -43,6 +43,33 @@ public class PersonajesViewModelTests
     }
 
     [Fact]
+    public async Task CargarPersonajes_BusquedaDemasiadoLarga_NoConsultaLaApiYMuestraElError()
+    {
+        var vm = _s.CrearPersonajesViewModel();
+        vm.TextoBusqueda = new string('a', 51);
+
+        await vm.CargarPersonajesCommand.ExecuteAsync(null);
+
+        Assert.True(vm.HayError);
+        Assert.Equal("La búsqueda no puede superar los 50 caracteres.", vm.MensajeEstado);
+        Assert.False(vm.EstaCargando);
+        _s.Api.Verify(a => a.ObtenerPersonajesAsync(It.IsAny<int>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task CargarPersonajes_BusquedaDe50Caracteres_SiConsultaLaApi()
+    {
+        _s.ResponderPagina(1, DatosDePrueba.PaginaExitosa(0, false));
+        var vm = _s.CrearPersonajesViewModel();
+        vm.TextoBusqueda = new string('a', 50);
+
+        await vm.CargarPersonajesCommand.ExecuteAsync(null);
+
+        Assert.False(vm.HayError);
+        _s.Api.Verify(a => a.ObtenerPersonajesAsync(1, It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()), Times.AtLeastOnce);
+    }
+
+    [Fact]
     public async Task CargarPersonajes_ErrorDelServidor_MuestraElMensajeComoError()
     {
         _s.ResponderPagina(1, ResultadoApi<RespuestaPaginada>.Fallo(TipoError.ErrorServidor, "El servidor tuvo un problema interno. (Error 500)", 500));

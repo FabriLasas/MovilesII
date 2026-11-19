@@ -5,6 +5,7 @@ using CommunityToolkit.Mvvm.Messaging;
 using ExploradorPersonajes.Mensajes;
 using ExploradorPersonajes.Modelos;
 using ExploradorPersonajes.Servicios;
+using ExploradorPersonajes.Validaciones;
 
 namespace ExploradorPersonajes.ViewModels;
 
@@ -22,6 +23,13 @@ public partial class PersonajesViewModel : ViewModelBase, IRecipient<FavoritoCam
     /// una: tres inútiles y una correcta.
     /// </summary>
     private const int MilisegundosDeEspera = 500;
+
+    /// <summary>
+    /// El nombre más largo del catálogo ("Giant Assassin Hidden in the Statue
+    /// of Liberty") tiene 46 caracteres: un texto de más de 50 no puede
+    /// coincidir con ningún personaje.
+    /// </summary>
+    public const int LargoMaximoBusqueda = 50;
 
     private readonly IServicioPersonajes _servicio;
     private readonly ServiciosDeItem _serviciosDeItem;
@@ -177,6 +185,18 @@ public partial class PersonajesViewModel : ViewModelBase, IRecipient<FavoritoCam
     private async Task BuscarDesdeCeroAsync(CancellationToken ct)
     {
         var version = ++_versionConsulta;
+
+        // Validación antes de ir a la red: un texto que la API nunca va a
+        // encontrar no merece una llamada. La regla es la misma que usan los
+        // demás formularios (ReglasComunes), no una comprobación suelta.
+        var error = ReglasComunes.LargoMaximo(TextoBusqueda, LargoMaximoBusqueda, "la búsqueda");
+        if (error is not null)
+        {
+            EstaCargando = false;
+            MostrarError(error);
+            return;
+        }
+
         EstaCargando = true;
         MostrarInfo("Buscando...");
 
