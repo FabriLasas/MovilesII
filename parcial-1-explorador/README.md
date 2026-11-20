@@ -297,6 +297,27 @@ Todo el acceso al hardware está detrás de interfaces del núcleo
 así que el formulario se prueba con mocks: qué pasa si se niega cada permiso, si
 el GPS no responde o si la cámara falla.
 
+### Personaje al azar: acelerómetro
+
+En la pantalla principal, **agitar el teléfono** abre el detalle de un
+personaje elegido al azar. El botón 🎲 hace lo mismo, para dispositivos sin
+acelerómetro (o para quien prefiera tocar).
+
+- Se usa el evento `ShakeDetected` del acelerómetro de MAUI, a velocidad
+  `SensorSpeed.Game`, la recomendada para detectar agitados.
+- **El sensor sólo está encendido mientras la lista está a la vista.**
+  `CicloDeVidaBehavior` ejecuta un comando del ViewModel cuando la página
+  aparece y otro cuando deja de verse: al abrir un detalle o cambiar de pestaña
+  el acelerómetro se apaga y no gasta batería.
+- Un agitado genera varios avisos seguidos del sensor. Como el comando no admite
+  ejecuciones simultáneas, mientras se abre un personaje los avisos extra se
+  ignoran: nunca se apilan varios detalles.
+- El id se elige entre 1 y el total del catálogo que informa la API. Ese total
+  sólo se toma del listado completo: con un filtro activo (por ejemplo, 287
+  muertos) quedaría afuera más de la mitad de los personajes.
+- No requiere permiso en tiempo de ejecución: Android e iOS consideran el
+  acelerómetro un sensor no sensible.
+
 ### Interacción
 
 Las animaciones necesitan acceso al control visual, que el ViewModel no debe
@@ -335,6 +356,7 @@ tests/ExploradorPersonajes.Tests/
 | `ServicioPersonajes`: que 200, 404, 4xx, 5xx, JSON dañado, timeout y falta de red terminen en el tipo de error correcto, y cuándo se usa la copia guardada | `ManejadorHttpFalso` reemplaza la red; conectividad y caché son mocks |
 | `ServicioCache`: guardar, leer y reemplazar copias | Una carpeta temporal por prueba, borrada al terminar |
 | **Integración**: los repositorios de favoritos y avistamientos y el servicio de favoritos contra SQLite real (alta, baja, orden, duplicados, actualización, migración desde la versión anterior y persistencia al reabrir) | Base SQLite **en memoria**, con un nombre único por prueba para que las que corren en paralelo no compartan datos |
+| Personaje al azar: el agitado abre un solo detalle aunque el sensor avise varias veces, el rango de ids sale del catálogo y no de una búsqueda filtrada, el sensor se enciende y apaga con la pantalla | El acelerómetro es un mock cuyo evento se dispara desde la prueba; el azar se fija para saber qué id esperar |
 | Formulario de avistamiento: permisos concedidos y negados, dispositivo sin cámara, GPS sin respuesta, foto reemplazada o cancelada, errores por campo, guardado con vibración y aviso al detalle, y qué pasa con la foto si la base falla | Permisos, cámara, GPS, base y navegación son mocks |
 | Validaciones: cada regla en sus valores límite (2, 3, 200 y 201 caracteres; ±90 y ±180 grados) y que se informen todos los errores juntos | No necesitan aislamiento: son funciones puras |
 | ViewModels: mensajes, lista, paginación, búsqueda con espera, descarte de respuestas viejas, favoritos y vibración | La API, los favoritos, la navegación y la vibración son mocks |
@@ -390,6 +412,7 @@ Decisiones:
 - Mensajes de estado diferenciados según el tipo de error
 - Avistamientos con foto (cámara o galería), nota y ubicación GPS opcional
 - Permisos pedidos en el momento justo, con alternativas si se niegan
+- Agitar el teléfono (o tocar 🎲) para abrir un personaje al azar
 
 El filtrado y la búsqueda se delegan al servidor, que acepta `name` y `status`
 como parámetros de consulta. Filtrar en memoria sólo alcanzaría a los registros

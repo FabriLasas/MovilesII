@@ -3,19 +3,35 @@
     x:Class="ExploradorPersonajes.Vistas.PersonajesPage"
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:comp="clr-namespace:ExploradorPersonajes.Comportamientos"
     xmlns:modelos="clr-namespace:ExploradorPersonajes.Modelos;assembly=ExploradorPersonajes.Core"
     xmlns:vm="clr-namespace:ExploradorPersonajes.ViewModels;assembly=ExploradorPersonajes.Core"
     x:DataType="vm:PersonajesViewModel"
     Title="{Binding Titulo}">
 
+    <!--  El acelerómetro se enciende sólo mientras esta pantalla está a la
+          vista: al abrir un detalle o cambiar de pestaña se apaga.  -->
+    <ContentPage.Behaviors>
+        <comp:CicloDeVidaBehavior AlAparecer="{Binding ActivarSensorCommand}" AlDesaparecer="{Binding DesactivarSensorCommand}" />
+    </ContentPage.Behaviors>
+
     <Grid Padding="16" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,*" RowSpacing="10">
 
         <!--  Acción principal: los comandos viven en el ViewModel  -->
-        <Button
-            Grid.Row="0"
-            Command="{Binding CargarPersonajesCommand}"
-            IsEnabled="{Binding NoEstaCargando}"
-            Text="Cargar datos" />
+        <Grid Grid.Row="0" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+            <Button
+                Command="{Binding CargarPersonajesCommand}"
+                IsEnabled="{Binding NoEstaCargando}"
+                Text="Cargar datos" />
+
+            <!--  Lo mismo que agitar el teléfono, para dispositivos sin
+                  acelerómetro o para quien prefiera tocar.  -->
+            <Button
+                Grid.Column="1"
+                Command="{Binding PersonajeAlAzarCommand}"
+                SemanticProperties.Description="Personaje al azar"
+                Text="🎲" />
+        </Grid>
 
         <!--  Herramientas para demostrar el manejo de errores sin depender
               de que el servidor falle o de apagar el wifi.  -->

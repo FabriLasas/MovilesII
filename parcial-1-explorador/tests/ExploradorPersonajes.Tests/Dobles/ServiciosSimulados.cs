@@ -26,6 +26,11 @@ public class ServiciosSimulados
     public Mock<IServicioFotos> Fotos { get; } = new();
     public Mock<IServicioUbicacion> Ubicacion { get; } = new();
     public Mock<IRepositorioAvistamientos> Avistamientos { get; } = new();
+    public Mock<IServicioMovimiento> Movimiento { get; } = new();
+
+    /// <summary>Id que devuelve el "azar" en las pruebas, y el total con que se lo pidió.</summary>
+    public int IdAlAzar { get; set; } = 42;
+    public int? TotalPedidoAlAzar { get; private set; }
 
     /// <summary>
     /// Mensajero real pero propio de la prueba: si se usara el global
@@ -45,7 +50,8 @@ public class ServiciosSimulados
     public ServiciosDeItem DeItem() => new(Favoritos.Object, Navegacion.Object, Haptica.Object);
 
     public PersonajesViewModel CrearPersonajesViewModel()
-        => new(Api.Object, DeItem(), Conectividad.Object, Mensajero);
+        => new(Api.Object, DeItem(), Conectividad.Object, Movimiento.Object, Mensajero,
+               total => { TotalPedidoAlAzar = total; return IdAlAzar; });
 
     public FavoritosViewModel CrearFavoritosViewModel()
         => new(Api.Object, Favoritos.Object, DeItem(), Mensajero);

@@ -33,6 +33,7 @@ public static class MauiProgram
         builder.Services.AddSingleton(MediaPicker.Default);
         builder.Services.AddSingleton(Geolocation.Default);
         builder.Services.AddSingleton(AppInfo.Current);
+        builder.Services.AddSingleton(Accelerometer.Default);
 
         // Mensajero con referencias débiles: una pantalla suscrita que deja de
         // usarse puede liberarse de memoria aunque no se desuscriba.
@@ -55,6 +56,7 @@ public static class MauiProgram
         // --- Hardware y permisos ---
         builder.Services.AddSingleton<IServicioPermisos, ServicioPermisos>();
         builder.Services.AddSingleton<IServicioUbicacion, ServicioUbicacion>();
+        builder.Services.AddSingleton<IServicioMovimiento, ServicioMovimiento>();
         builder.Services.AddSingleton<IServicioFotos>(sp =>
             new ServicioFotos(sp.GetRequiredService<IMediaPicker>(), FileSystem.CacheDirectory, FileSystem.AppDataDirectory));
 

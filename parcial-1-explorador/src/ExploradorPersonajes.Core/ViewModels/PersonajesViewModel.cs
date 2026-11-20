@@ -31,9 +31,22 @@ public partial class PersonajesViewModel : ViewModelBase, IRecipient<FavoritoCam
     /// </summary>
     public const int LargoMaximoBusqueda = 50;
 
+    /// <summary>
+    /// Cantidad de personajes del catálogo según la API. Se usa como valor
+    /// inicial para elegir uno al azar antes de la primera carga, y se
+    /// actualiza con el total real cada vez que se carga el listado completo.
+    /// </summary>
+    private const int TotalCatalogoInicial = 826;
+
+    private static readonly TimeSpan VibracionAlAzar = TimeSpan.FromMilliseconds(150);
+
     private readonly IServicioPersonajes _servicio;
     private readonly ServiciosDeItem _serviciosDeItem;
     private readonly IServicioConectividad _conectividad;
+    private readonly IServicioMovimiento _movimiento;
+    private readonly Func<int, int> _elegirId;
+
+    private int _totalCatalogo = TotalCatalogoInicial;
 
     /// <summary>
     /// Permite cancelar la búsqueda pendiente cuando el usuario sigue
@@ -83,15 +96,28 @@ public partial class PersonajesViewModel : ViewModelBase, IRecipient<FavoritoCam
 
     public string TextoSimulacion => SimulandoSinConexion ? "Restaurar red" : "Simular sin red";
 
+    /// <summary>Permite mostrar la pista "agitá el teléfono" sólo donde sirve.</summary>
+    public bool SensorDisponible { get; }
+
+    /// <param name="elegirId">
+    /// Devuelve un id entre 1 y el total recibido. Se puede reemplazar en las
+    /// pruebas para que el personaje "al azar" sea siempre el mismo.
+    /// </param>
     public PersonajesViewModel(
         IServicioPersonajes servicio,
         ServiciosDeItem serviciosDeItem,
         IServicioConectividad conectividad,
-        IMessenger mensajero)
+        IServicioMovimiento movimiento,
+        IMessenger mensajero,
+        Func<int, int>? elegirId = null)
     {
         _servicio = servicio;
         _serviciosDeItem = serviciosDeItem;
         _conectividad = conectividad;
+        _movimiento = movimiento;
+        _elegirId = elegirId ?? (total => Random.Shared.Next(1, total + 1));
+        SensorDisponible = movimiento.EstaDisponible;
+        _movimiento.Agitado += AlAgitar;
         Titulo = "Personajes";
         TextoBusqueda = string.Empty;
 
@@ -104,7 +130,9 @@ public partial class PersonajesViewModel : ViewModelBase, IRecipient<FavoritoCam
         };
         FiltroSeleccionado = OpcionesFiltro[0];
 
-        MensajeEstado = "Tocá «Cargar datos» o escribí un nombre para buscar.";
+        MensajeEstado = SensorDisponible
+            ? "Tocá «Cargar datos», escribí un nombre o agitá el teléfono para un personaje al azar."
+            : "Tocá «Cargar datos» o escribí un nombre para buscar.";
 
         // Suscripción a los cambios de favoritos hechos en otras pantallas.
         // El mensajero guarda una referencia débil: si este ViewModel deja de
@@ -236,6 +264,7 @@ public partial class PersonajesViewModel : ViewModelBase, IRecipient<FavoritoCam
 
             _paginaActual = 1;
             _hayPaginaSiguiente = resultado.Datos.Info?.PaginaSiguiente is not null;
+            RecordarTotalDelCatalogo(resultado.Datos);
 
             InformarProgreso(resultado);
         }
@@ -341,6 +370,69 @@ public partial class PersonajesViewModel : ViewModelBase, IRecipient<FavoritoCam
         }
 
         EstaCargando = false;
+    }
+
+    // --- Personaje al azar (acelerómetro) ---
+
+    /// <summary>
+    /// Enciende el acelerómetro mientras la pantalla está a la vista. Lo
+    /// invoca la vista al aparecer (CicloDeVidaBehavior).
+    /// </summary>
+    [RelayCommand]
+    private void ActivarSensor() => _movimiento.Iniciar();
+
+    /// <summary>Lo apaga al salir de la pantalla, para no gastar batería.</summary>
+    [RelayCommand]
+    private void DesactivarSensor() => _movimiento.Detener();
+
+    /// <summary>
+    /// Un mismo agitado puede generar varios avisos seguidos del sensor. Como
+    /// el comando no admite ejecuciones simultáneas, mientras se está
+    /// abriendo un personaje los avisos extra se ignoran.
+    /// </summary>
+    private void AlAgitar(object? sender, EventArgs e)
+    {
+        if (PersonajeAlAzarCommand.CanExecute(null))
+        {
+            _ = PersonajeAlAzarCommand.ExecuteAsync(null);
+        }
+    }
+
+    /// <summary>
+    /// Abre el detalle de un personaje cualquiera. Lo dispara el agitado y
+    /// también un botón, para dispositivos sin acelerómetro.
+    /// </summary>
+    [RelayCommand(AllowConcurrentExecutions = false)]
+    private async Task PersonajeAlAzarAsync()
+    {
+        var id = _elegirId(_totalCatalogo);
+        _serviciosDeItem.Haptica.Vibrar(VibracionAlAzar);
+        MostrarInfo("Buscando un personaje al azar...");
+
+        var resultado = await _servicio.ObtenerPersonajePorIdAsync(id);
+
+        if (resultado.EsExitoso && resultado.Datos is not null)
+        {
+            MostrarInfo($"Al azar: {resultado.Datos.Nombre}.");
+            await _serviciosDeItem.Navegacion.IrADetalleAsync(resultado.Datos);
+        }
+        else
+        {
+            MostrarError(resultado.Mensaje);
+        }
+    }
+
+    /// <summary>
+    /// Con filtros, el total informado es el de esa búsqueda (por ejemplo, los
+    /// muertos), no el del catálogo: sólo se toma del listado completo.
+    /// </summary>
+    private void RecordarTotalDelCatalogo(RespuestaPaginada pagina)
+    {
+        var esListadoCompleto = string.IsNullOrWhiteSpace(TextoBusqueda) && FiltroSeleccionado?.ValorApi is null;
+        if (esListadoCompleto && pagina.Info?.TotalElementos > 0)
+        {
+            _totalCatalogo = pagina.Info.TotalElementos;
+        }
     }
 
     private void AgregarPersonajes(IEnumerable<Personaje> personajes)
