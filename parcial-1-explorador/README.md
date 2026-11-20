@@ -253,6 +253,50 @@ La búsqueda de personajes usa la misma regla de largo máximo: un texto de más
 50 caracteres no se envía a la API (el nombre más largo del catálogo tiene 46) y
 se informa el error en lugar de hacer una llamada inútil.
 
+### Avistamientos: cámara, GPS y permisos
+
+Desde el detalle de un personaje se registra un **avistamiento**: una foto, una
+nota y, si el usuario quiere, la ubicación. Se guardan en SQLite y se listan en
+el mismo detalle, del más reciente al más antiguo.
+
+| Recurso | API de MAUI | Permiso en tiempo de ejecución |
+|---|---|---|
+| Cámara | `MediaPicker.CapturePhotoAsync` | `Permissions.Camera` |
+| Galería | `MediaPicker.PickPhotosAsync` | Ninguno: el selector de fotos del sistema sólo entrega la foto elegida |
+| GPS | `Geolocation.GetLocationAsync` (precisión media, 10 s) con respaldo en `GetLastKnownLocationAsync` | `Permissions.LocationWhenInUse` |
+| Vibración | `Vibration.Vibrate(300 ms)` al guardar; `HapticFeedback` al tocar | No requiere diálogo (`VIBRATE` en el manifiesto) |
+
+Criterios aplicados:
+
+- **Cada permiso se pide en el momento en que hace falta**, nunca todos juntos
+  al abrir la app. Antes de mostrar el diálogo se consulta el estado con
+  `CheckStatusAsync`: si ya estaba concedido, el usuario no ve nada.
+- **Si se niega, la app no falla.** Sin cámara se ofrece la galería; sin
+  ubicación, el avistamiento se guarda igual (la ubicación es opcional). En
+  ambos casos aparece un botón para abrir los Ajustes de la app, que es la
+  única forma de recuperar un permiso negado con "no volver a preguntar".
+- **Dispositivos sin el hardware**: el botón de la cámara se oculta si no hay
+  cámara, y en el manifiesto la cámara y el GPS se declaran con
+  `required="false"` para que la app se pueda instalar igual.
+- **Fotos livianas**: se piden a 1280 píxeles y con compresión al 80 %.
+- **Sin archivos huérfanos**: la foto queda en una carpeta temporal mientras se
+  completa el formulario y recién al guardar se copia a la carpeta de la app.
+  Si el usuario cancela o sale con el botón atrás, la temporal se descarta al
+  iniciar la app. Al eliminar un avistamiento se borra también su foto, pero
+  sólo después de quitar el registro de la base.
+
+Configuración por plataforma:
+
+| Archivo | Qué declara |
+|---|---|
+| `Platforms/Android/AndroidManifest.xml` | `CAMERA`, `ACCESS_FINE_LOCATION`, `ACCESS_COARSE_LOCATION`, `READ_EXTERNAL_STORAGE` (sólo hasta Android 12), `VIBRATE`, cámara y GPS como hardware opcional, y la consulta del intent de captura que exige Android 11 |
+| `Platforms/iOS/Info.plist` y `Platforms/MacCatalyst/Info.plist` | `NSCameraUsageDescription`, `NSPhotoLibraryUsageDescription` y `NSLocationWhenInUseUsageDescription`: el texto que ve el usuario al pedir cada permiso, obligatorio en iOS |
+
+Todo el acceso al hardware está detrás de interfaces del núcleo
+(`IServicioPermisos`, `IServicioFotos`, `IServicioUbicacion`, `IServicioHaptica`),
+así que el formulario se prueba con mocks: qué pasa si se niega cada permiso, si
+el GPS no responde o si la cámara falla.
+
 ### Interacción
 
 Las animaciones necesitan acceso al control visual, que el ViewModel no debe
@@ -291,6 +335,7 @@ tests/ExploradorPersonajes.Tests/
 | `ServicioPersonajes`: que 200, 404, 4xx, 5xx, JSON dañado, timeout y falta de red terminen en el tipo de error correcto, y cuándo se usa la copia guardada | `ManejadorHttpFalso` reemplaza la red; conectividad y caché son mocks |
 | `ServicioCache`: guardar, leer y reemplazar copias | Una carpeta temporal por prueba, borrada al terminar |
 | **Integración**: los repositorios de favoritos y avistamientos y el servicio de favoritos contra SQLite real (alta, baja, orden, duplicados, actualización, migración desde la versión anterior y persistencia al reabrir) | Base SQLite **en memoria**, con un nombre único por prueba para que las que corren en paralelo no compartan datos |
+| Formulario de avistamiento: permisos concedidos y negados, dispositivo sin cámara, GPS sin respuesta, foto reemplazada o cancelada, errores por campo, guardado con vibración y aviso al detalle, y qué pasa con la foto si la base falla | Permisos, cámara, GPS, base y navegación son mocks |
 | Validaciones: cada regla en sus valores límite (2, 3, 200 y 201 caracteres; ±90 y ±180 grados) y que se informen todos los errores juntos | No necesitan aislamiento: son funciones puras |
 | ViewModels: mensajes, lista, paginación, búsqueda con espera, descarte de respuestas viejas, favoritos y vibración | La API, los favoritos, la navegación y la vibración son mocks |
 
@@ -343,6 +388,8 @@ Decisiones:
 - Pestaña de favoritos cargada en una sola llamada
 - Copia local para seguir mostrando datos sin conexión
 - Mensajes de estado diferenciados según el tipo de error
+- Avistamientos con foto (cámara o galería), nota y ubicación GPS opcional
+- Permisos pedidos en el momento justo, con alternativas si se niegan
 
 El filtrado y la búsqueda se delegan al servidor, que acepta `name` y `status`
 como parámetros de consulta. Filtrar en memoria sólo alcanzaría a los registros

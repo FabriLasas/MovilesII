@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ContentPage
+    x:Class="ExploradorPersonajes.Vistas.NuevoAvistamientoPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:comp="clr-namespace:ExploradorPersonajes.Comportamientos"
+    xmlns:vm="clr-namespace:ExploradorPersonajes.ViewModels;assembly=ExploradorPersonajes.Core"
+    x:DataType="vm:NuevoAvistamientoViewModel"
+    Title="{Binding Titulo}">
+
+    <ContentPage.Resources>
+        <!--  Mensaje de error debajo de cada campo.  -->
+        <Style x:Key="ErrorDeCampo" TargetType="Label">
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="TextColor" Value="#C0392B" />
+        </Style>
+        <Style x:Key="TituloSeccion" TargetType="Label">
+            <Setter Property="FontAttributes" Value="Bold" />
+            <Setter Property="FontSize" Value="16" />
+        </Style>
+        <Style x:Key="Tarjeta" TargetType="Border">
+            <Setter Property="Padding" Value="16" />
+            <Setter Property="Stroke" Value="{AppThemeBinding Light=#E0E0E0, Dark=#3A3A3A}" />
+            <Setter Property="StrokeShape" Value="RoundRectangle 12" />
+            <Setter Property="StrokeThickness" Value="1" />
+        </Style>
+    </ContentPage.Resources>
+
+    <ScrollView>
+        <VerticalStackLayout Padding="20" Spacing="16">
+
+            <!--  A quién se avistó  -->
+            <HorizontalStackLayout Spacing="12">
+                <Image
+                    Aspect="AspectFill"
+                    HeightRequest="48"
+                    Source="{Binding Personaje.ImagenUrl}"
+                    WidthRequest="48">
+                    <Image.Clip>
+                        <EllipseGeometry Center="24,24" RadiusX="24" RadiusY="24" />
+                    </Image.Clip>
+                </Image>
+                <Label
+                    FontAttributes="Bold"
+                    FontSize="18"
+                    Text="{Binding Personaje.Nombre}"
+                    VerticalOptions="Center" />
+            </HorizontalStackLayout>
+
+            <!--  Foto  -->
+            <Border Style="{StaticResource Tarjeta}">
+                <VerticalStackLayout Spacing="10">
+                    <Label Style="{StaticResource TituloSeccion}" Text="Foto" />
+
+                    <Grid HeightRequest="220">
+                        <Border
+                            BackgroundColor="{AppThemeBinding Light=#F2F2F2, Dark=#2A2A2A}"
+                            IsVisible="{Binding SinFoto}"
+                            StrokeShape="RoundRectangle 10"
+                            StrokeThickness="0">
+                            <Label
+                                HorizontalOptions="Center"
+                                Text="Todavía no hay foto"
+                                TextColor="#95A5A6"
+                                VerticalOptions="Center" />
+                        </Border>
+                        <Image
+                            Aspect="AspectFill"
+                            IsVisible="{Binding TieneFoto}"
+                            Source="{Binding RutaFoto}">
+                            <Image.Behaviors>
+                                <comp:AparicionGradualBehavior />
+                            </Image.Behaviors>
+                        </Image>
+                    </Grid>
+
+                    <!--  La cámara sólo se ofrece si el dispositivo la tiene;
+                          la galería siempre está, como alternativa.  -->
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+                        <Button
+                            Grid.Column="0"
+                            Command="{Binding TomarFotoCommand}"
+                            IsVisible="{Binding CamaraDisponible}"
+                            Text="📷  Sacar foto" />
+                        <Button
+                            Grid.Column="1"
+                            BackgroundColor="#7F8C8D"
+                            Command="{Binding ElegirFotoCommand}"
+                            Text="🖼  Galería" />
+                    </Grid>
+
+                    <Label
+                        IsVisible="{Binding HayErrorFoto}"
+                        Style="{StaticResource ErrorDeCampo}"
+                        Text="{Binding ErrorFoto}" />
+                </VerticalStackLayout>
+            </Border>
+
+            <!--  Nota  -->
+            <Border Style="{StaticResource Tarjeta}">
+                <VerticalStackLayout Spacing="8">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <Label Style="{StaticResource TituloSeccion}" Text="Nota" />
+                        <Label
+                            Grid.Column="1"
+                            FontSize="13"
+                            Text="{Binding ContadorNota}"
+                            TextColor="#7F8C8D"
+                            VerticalOptions="Center" />
+                    </Grid>
+                    <Editor
+                        AutoSize="TextChanges"
+                        MaxLength="{Binding LargoMaximoNota}"
+                        MinimumHeightRequest="80"
+                        Placeholder="¿Dónde y cómo lo viste?"
+                        Text="{Binding Nota}" />
+                    <Label
+                        IsVisible="{Binding HayErrorNota}"
+                        Style="{StaticResource ErrorDeCampo}"
+                        Text="{Binding ErrorNota}" />
+                </VerticalStackLayout>
+            </Border>
+
+            <!--  Ubicación (opcional)  -->
+            <Border Style="{StaticResource Tarjeta}">
+                <VerticalStackLayout Spacing="8">
+                    <Label Style="{StaticResource TituloSeccion}" Text="Ubicación" />
+                    <HorizontalStackLayout Spacing="8">
+                        <ActivityIndicator
+                            HeightRequest="20"
+                            IsRunning="{Binding BuscandoUbicacion}"
+                            IsVisible="{Binding BuscandoUbicacion}"
+                            WidthRequest="20" />
+                        <Label Text="{Binding TextoUbicacion}" VerticalOptions="Center" />
+                    </HorizontalStackLayout>
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                        <Button
+                            BackgroundColor="#7F8C8D"
+                            Command="{Binding AgregarUbicacionCommand}"
+                            Text="📍  Usar mi ubicación" />
+                        <Button
+                            Grid.Column="1"
+                            BackgroundColor="Transparent"
+                            BorderColor="#C0392B"
+                            BorderWidth="1"
+                            Command="{Binding QuitarUbicacionCommand}"
+                            IsVisible="{Binding TieneUbicacion}"
+                            Text="Quitar"
+                            TextColor="#C0392B" />
+                    </Grid>
+                    <Label
+                        IsVisible="{Binding HayErrorUbicacion}"
+                        Style="{StaticResource ErrorDeCampo}"
+                        Text="{Binding ErrorUbicacion}" />
+                </VerticalStackLayout>
+            </Border>
+
+            <!--  Estado y acceso a Ajustes si se negó un permiso  -->
+            <Label
+                FontSize="14"
+                HorizontalTextAlignment="Center"
+                Text="{Binding MensajeEstado}">
+                <Label.Triggers>
+                    <DataTrigger Binding="{Binding HayError}" TargetType="Label" Value="True">
+                        <Setter Property="TextColor" Value="#C0392B" />
+                        <Setter Property="FontAttributes" Value="Bold" />
+                    </DataTrigger>
+                    <DataTrigger Binding="{Binding HayError}" TargetType="Label" Value="False">
+                        <Setter Property="TextColor" Value="#7F8C8D" />
+                    </DataTrigger>
+                </Label.Triggers>
+            </Label>
+            <Button
+                BackgroundColor="Transparent"
+                BorderColor="#512BD4"
+                BorderWidth="1"
+                Command="{Binding AbrirAjustesCommand}"
+                IsVisible="{Binding MostrarAccesoAjustes}"
+                Text="Abrir Ajustes para dar permisos"
+                TextColor="{AppThemeBinding Light=#512BD4, Dark=#AC99EA}" />
+
+            <!--  Acciones  -->
+            <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+                <Button
+                    BackgroundColor="Transparent"
+                    BorderColor="#7F8C8D"
+                    BorderWidth="1"
+                    Command="{Binding CancelarCommand}"
+                    Text="Cancelar"
+                    TextColor="{AppThemeBinding Light=#1F1F1F, Dark=#FFFFFF}" />
+                <Button
+                    Grid.Column="1"
+                    Command="{Binding GuardarCommand}"
+                    IsEnabled="{Binding NoEstaCargando}"
+                    Text="Guardar" />
+            </Grid>
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

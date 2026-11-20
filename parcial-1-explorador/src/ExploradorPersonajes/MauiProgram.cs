@@ -29,6 +29,10 @@ public static class MauiProgram
         builder.Services.AddSingleton(Connectivity.Current);
         builder.Services.AddSingleton(Preferences.Default);
         builder.Services.AddSingleton(HapticFeedback.Default);
+        builder.Services.AddSingleton(Vibration.Default);
+        builder.Services.AddSingleton(MediaPicker.Default);
+        builder.Services.AddSingleton(Geolocation.Default);
+        builder.Services.AddSingleton(AppInfo.Current);
 
         // Mensajero con referencias débiles: una pantalla suscrita que deja de
         // usarse puede liberarse de memoria aunque no se desuscriba.
@@ -44,6 +48,15 @@ public static class MauiProgram
         builder.Services.AddSingleton<IServicioCache>(_ => new ServicioCache(FileSystem.AppDataDirectory));
         builder.Services.AddSingleton<IServicioFavoritos, ServicioFavoritos>();
         builder.Services.AddSingleton<IFavoritosAnteriores, FavoritosEnPreferencias>();
+        builder.Services.AddSingleton<IServicioNavegacion, ServicioNavegacion>();
+        builder.Services.AddSingleton<IServicioHaptica, ServicioHaptica>();
+        builder.Services.AddSingleton<ServiciosDeItem>();
+
+        // --- Hardware y permisos ---
+        builder.Services.AddSingleton<IServicioPermisos, ServicioPermisos>();
+        builder.Services.AddSingleton<IServicioUbicacion, ServicioUbicacion>();
+        builder.Services.AddSingleton<IServicioFotos>(sp =>
+            new ServicioFotos(sp.GetRequiredService<IMediaPicker>(), FileSystem.CacheDirectory, FileSystem.AppDataDirectory));
 
         // --- Base de datos local ---
         // Una sola conexión para toda la app, sobre un archivo en la carpeta
@@ -54,9 +67,8 @@ public static class MauiProgram
             SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.Create | SQLiteOpenFlags.SharedCache));
         builder.Services.AddSingleton<IRepositorioFavoritos>(sp =>
             new RepositorioFavoritosSqlite(sp.GetRequiredService<SQLiteAsyncConnection>()));
-        builder.Services.AddSingleton<IServicioNavegacion, ServicioNavegacion>();
-        builder.Services.AddSingleton<IServicioHaptica, ServicioHaptica>();
-        builder.Services.AddSingleton<ServiciosDeItem>();
+        builder.Services.AddSingleton<IRepositorioAvistamientos>(sp =>
+            new RepositorioAvistamientosSqlite(sp.GetRequiredService<SQLiteAsyncConnection>()));
 
         // AddHttpClient registra una fábrica que reutiliza los sockets entre
         // llamadas. Crear un HttpClient nuevo por request agota los puertos
@@ -71,12 +83,14 @@ public static class MauiProgram
         builder.Services.AddSingleton<FavoritosViewModel>();
         builder.Services.AddSingleton<FavoritosPage>();
 
-        // Transient: cada navegación al detalle crea una instancia nueva, para
-        // que no queden datos del personaje anterior al abrir otro.
-        // Se pide DetalleViewModel pero se entrega el adaptador de Shell, que
-        // agrega la recepción de parámetros de navegación.
+        // Transient: cada navegación crea una instancia nueva, para que no
+        // queden datos del personaje anterior ni un formulario a medio llenar.
+        // Se pide el ViewModel del núcleo pero se entrega el adaptador de
+        // Shell, que agrega la recepción de parámetros de navegación.
         builder.Services.AddTransient<DetalleViewModel, DetalleViewModelShell>();
         builder.Services.AddTransient<DetallePage>();
+        builder.Services.AddTransient<NuevoAvistamientoViewModel, NuevoAvistamientoViewModelShell>();
+        builder.Services.AddTransient<NuevoAvistamientoPage>();
 
 #if DEBUG
         builder.Logging.AddDebug();

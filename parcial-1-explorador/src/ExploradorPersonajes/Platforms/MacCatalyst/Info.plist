@@ -2,6 +2,14 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<!-- Textos que iOS muestra al pedir cada permiso. Son obligatorios:
+	     sin ellos la app se cierra al pedir el permiso y Apple la rechaza. -->
+	<key>NSCameraUsageDescription</key>
+	<string>Se usa la cámara para sacar la foto de un avistamiento.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Se usa la galería para elegir la foto de un avistamiento.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Se usa tu ubicación, sólo si la pedís, para registrar dónde viste al personaje.</string>
     <!-- The Mac App Store requires you specify if the app uses encryption. -->
     <!-- Please consult https://developer.apple.com/documentation/bundleresources/information_property_list/itsappusesnonexemptencryption -->
     <!-- <key>ITSAppUsesNonExemptEncryption</key> -->

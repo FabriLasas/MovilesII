@@ -68,6 +68,62 @@
                     <Label Grid.Row="4" Grid.Column="1" Text="{Binding Personaje.UbicacionActual.Nombre}" />
                 </Grid>
             </Border>
+
+            <!--  Avistamientos: fotos que el usuario registró de este personaje  -->
+            <Grid ColumnDefinitions="*,Auto" Margin="0,8,0,0">
+                <VerticalStackLayout VerticalOptions="Center">
+                    <Label FontAttributes="Bold" FontSize="18" Text="Avistamientos" />
+                    <Label FontSize="13" Text="{Binding ResumenAvistamientos}" TextColor="#7F8C8D" />
+                </VerticalStackLayout>
+                <Button
+                    Grid.Column="1"
+                    Command="{Binding NuevoAvistamientoCommand}"
+                    Text="📷  Nuevo"
+                    VerticalOptions="Center" />
+            </Grid>
+
+            <!--  BindableLayout y no CollectionView: la lista va dentro del
+                  ScrollView de la página y son pocos elementos.  -->
+            <VerticalStackLayout BindableLayout.ItemsSource="{Binding Avistamientos}" Spacing="10">
+                <BindableLayout.ItemTemplate>
+                    <DataTemplate x:DataType="vm:AvistamientoItemViewModel">
+                        <Border
+                            Padding="10"
+                            Stroke="{AppThemeBinding Light=#E0E0E0, Dark=#3A3A3A}"
+                            StrokeShape="RoundRectangle 12"
+                            StrokeThickness="1">
+                            <Border.Behaviors>
+                                <comp:AparicionGradualBehavior />
+                            </Border.Behaviors>
+                            <Grid ColumnDefinitions="72,*,Auto" ColumnSpacing="12">
+                                <Image
+                                    Aspect="AspectFill"
+                                    HeightRequest="72"
+                                    Source="{Binding RutaFoto}"
+                                    WidthRequest="72">
+                                    <Image.Clip>
+                                        <RoundRectangleGeometry CornerRadius="8" Rect="0,0,72,72" />
+                                    </Image.Clip>
+                                </Image>
+                                <VerticalStackLayout Grid.Column="1" Spacing="2" VerticalOptions="Center">
+                                    <Label LineBreakMode="WordWrap" Text="{Binding Nota}" />
+                                    <Label FontSize="12" Text="{Binding TextoFecha}" TextColor="#7F8C8D" />
+                                    <Label FontSize="12" Text="{Binding TextoUbicacion}" TextColor="#7F8C8D" />
+                                </VerticalStackLayout>
+                                <Button
+                                    Grid.Column="2"
+                                    Padding="10,0"
+                                    BackgroundColor="Transparent"
+                                    Command="{Binding EliminarCommand}"
+                                    SemanticProperties.Description="Eliminar avistamiento"
+                                    Text="🗑"
+                                    TextColor="#C0392B"
+                                    VerticalOptions="Center" />
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </BindableLayout.ItemTemplate>
+            </VerticalStackLayout>
         </VerticalStackLayout>
     </ScrollView>
 </ContentPage>

@@ -1,3 +1,5 @@
+using CommunityToolkit.Mvvm.Messaging;
+using ExploradorPersonajes.Datos;
 using ExploradorPersonajes.Servicios;
 using ExploradorPersonajes.ViewModels;
 
@@ -15,8 +17,14 @@ namespace ExploradorPersonajes.Plataforma;
 /// </summary>
 public class DetalleViewModelShell : DetalleViewModel, IQueryAttributable
 {
-    public DetalleViewModelShell(IServicioFavoritos favoritos, IServicioHaptica haptica)
-        : base(favoritos, haptica)
+    public DetalleViewModelShell(
+        IServicioFavoritos favoritos,
+        IServicioHaptica haptica,
+        IRepositorioAvistamientos avistamientos,
+        IServicioFotos fotos,
+        IServicioNavegacion navegacion,
+        IMessenger mensajero)
+        : base(favoritos, haptica, avistamientos, fotos, navegacion, mensajero)
     {
     }
 

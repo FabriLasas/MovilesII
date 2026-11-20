@@ -12,10 +12,17 @@ namespace ExploradorPersonajes.Plataforma;
 public class ServicioNavegacion : IServicioNavegacion
 {
     public Task IrADetalleAsync(Personaje personaje)
-    {
-        return Shell.Current.GoToAsync(nameof(DetallePage), new Dictionary<string, object>
+        => IrAsync(nameof(DetallePage), personaje);
+
+    public Task IrANuevoAvistamientoAsync(Personaje personaje)
+        => IrAsync(nameof(NuevoAvistamientoPage), personaje);
+
+    /// <summary>".." es la ruta relativa de Shell para la pantalla anterior.</summary>
+    public Task VolverAsync() => Shell.Current.GoToAsync("..");
+
+    private static Task IrAsync(string ruta, Personaje personaje)
+        => Shell.Current.GoToAsync(ruta, new Dictionary<string, object>
         {
             [DetalleViewModel.ClaveParametro] = personaje
         });
-    }
 }

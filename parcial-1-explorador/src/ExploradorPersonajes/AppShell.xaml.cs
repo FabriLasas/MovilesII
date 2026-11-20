@@ -12,5 +12,6 @@ public partial class AppShell : Shell
         // GoToAsync(nameof(DetallePage)) desde cualquier ViewModel sin que
         // éste tenga que conocer la jerarquía de páginas.
         Routing.RegisterRoute(nameof(DetallePage), typeof(DetallePage));
+        Routing.RegisterRoute(nameof(NuevoAvistamientoPage), typeof(NuevoAvistamientoPage));
     }
 }

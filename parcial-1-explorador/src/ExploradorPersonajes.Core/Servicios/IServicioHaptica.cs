@@ -13,4 +13,11 @@ public interface IServicioHaptica
     /// hace nada: nunca interrumpe la acción del usuario.
     /// </summary>
     void ConfirmarToque();
+
+    /// <summary>
+    /// Vibración más larga, para confirmar que terminó una acción completa
+    /// (por ejemplo, guardar un avistamiento). Si no hay motor de vibración,
+    /// no hace nada.
+    /// </summary>
+    void Vibrar(TimeSpan duracion);
 }

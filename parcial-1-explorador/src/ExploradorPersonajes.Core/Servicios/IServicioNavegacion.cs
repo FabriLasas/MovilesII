@@ -10,4 +10,9 @@ namespace ExploradorPersonajes.Servicios;
 public interface IServicioNavegacion
 {
     Task IrADetalleAsync(Personaje personaje);
+
+    Task IrANuevoAvistamientoAsync(Personaje personaje);
+
+    /// <summary>Vuelve a la pantalla anterior.</summary>
+    Task VolverAsync();
 }

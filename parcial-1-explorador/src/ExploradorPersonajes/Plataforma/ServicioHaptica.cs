@@ -3,15 +3,18 @@ using ExploradorPersonajes.Servicios;
 namespace ExploradorPersonajes.Plataforma;
 
 /// <summary>
-/// Implementación de la respuesta táctil con la API de MAUI.
+/// Respuesta táctil con las APIs de MAUI: HapticFeedback para el toque corto
+/// y Vibration para la vibración de duración elegida.
 /// </summary>
 public class ServicioHaptica : IServicioHaptica
 {
     private readonly IHapticFeedback _haptica;
+    private readonly IVibration _vibracion;
 
-    public ServicioHaptica(IHapticFeedback haptica)
+    public ServicioHaptica(IHapticFeedback haptica, IVibration vibracion)
     {
         _haptica = haptica;
+        _vibracion = vibracion;
     }
 
     /// <summary>
@@ -27,6 +30,19 @@ public class ServicioHaptica : IServicioHaptica
         try
         {
             _haptica.Perform(HapticFeedbackType.Click);
+        }
+        catch (FeatureNotSupportedException)
+        {
+        }
+    }
+
+    public void Vibrar(TimeSpan duracion)
+    {
+        if (!_vibracion.IsSupported) return;
+
+        try
+        {
+            _vibracion.Vibrate(duracion);
         }
         catch (FeatureNotSupportedException)
         {
