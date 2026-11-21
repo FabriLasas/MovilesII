@@ -71,7 +71,18 @@ public partial class FavoritosViewModel : ViewModelBase, IRecipient<FavoritoCamb
 
     private async Task CargarAsync()
     {
-        await _favoritos.InicializarAsync();
+        // Esta carga arranca desde el constructor sin que nadie la espere:
+        // una excepción acá no llegaría a ningún catch y cerraría la app.
+        try
+        {
+            await _favoritos.InicializarAsync();
+        }
+        catch (Exception ex)
+        {
+            MostrarError($"No se pudieron leer los favoritos guardados. ({ex.Message})");
+            return;
+        }
+
         var guardados = _favoritos.ObtenerTodos();
 
         // 1) Lo guardado se muestra enseguida, haya red o no.
@@ -91,7 +102,17 @@ public partial class FavoritosViewModel : ViewModelBase, IRecipient<FavoritoCamb
 
         if (resultado.EsExitoso && !resultado.DesdeCache && resultado.Datos is not null)
         {
-            await _favoritos.ActualizarDatosAsync(resultado.Datos);
+            try
+            {
+                await _favoritos.ActualizarDatosAsync(resultado.Datos);
+            }
+            catch (Exception)
+            {
+                // No se pudieron guardar los datos nuevos: se siguen mostrando
+                // los anteriores, que son correctos aunque estén desactualizados.
+                MostrarInfo("No se pudieron actualizar los datos: se muestran los guardados en el dispositivo.");
+                return;
+            }
 
             // Se vuelve a leer del servicio y no de la respuesta: mientras
             // viajaba, el usuario pudo marcar o desmarcar favoritos.
@@ -101,7 +122,7 @@ public partial class FavoritosViewModel : ViewModelBase, IRecipient<FavoritoCamb
         else
         {
             // No es un error para el usuario: los favoritos se ven igual,
-            // sólo que con los datos de la última vez.
+            // solo que con los datos de la última vez.
             MostrarInfo("No se pudieron actualizar los datos: se muestran los guardados en el dispositivo.");
         }
     }

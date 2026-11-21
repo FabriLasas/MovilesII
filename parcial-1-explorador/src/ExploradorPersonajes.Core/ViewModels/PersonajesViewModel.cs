@@ -12,7 +12,7 @@ namespace ExploradorPersonajes.ViewModels;
 /// <summary>
 /// ViewModel de la pantalla principal. Concentra el estado y las acciones de
 /// la lista de personajes: carga, búsqueda, filtrado y paginación.
-/// No conoce ningún control de la interfaz: se comunica con la vista sólo a
+/// No conoce ningún control de la interfaz: se comunica con la vista solo a
 /// través de propiedades enlazadas y comandos.
 /// </summary>
 public partial class PersonajesViewModel : ViewModelBase, IRecipient<FavoritoCambiadoMensaje>
@@ -96,7 +96,7 @@ public partial class PersonajesViewModel : ViewModelBase, IRecipient<FavoritoCam
 
     public string TextoSimulacion => SimulandoSinConexion ? "Restaurar red" : "Simular sin red";
 
-    /// <summary>Permite mostrar la pista "agitá el teléfono" sólo donde sirve.</summary>
+    /// <summary>Permite mostrar la pista "agitá el teléfono" solo donde sirve.</summary>
     public bool SensorDisponible { get; }
 
     /// <param name="elegirId">
@@ -231,7 +231,15 @@ public partial class PersonajesViewModel : ViewModelBase, IRecipient<FavoritoCam
         // Las tarjetas consultan si cada personaje es favorito al crearse, así
         // que los favoritos guardados tienen que estar cargados antes. Después
         // de la primera vez, esta llamada termina al instante.
-        await _serviciosDeItem.Favoritos.InicializarAsync();
+        try
+        {
+            await _serviciosDeItem.Favoritos.InicializarAsync();
+        }
+        catch (Exception)
+        {
+            // Si la base local falla, la lista igual sirve: las estrellas se
+            // muestran vacías. La pestaña Favoritos informa el problema.
+        }
 
         ResultadoApi<RespuestaPaginada> resultado;
         try
@@ -424,7 +432,7 @@ public partial class PersonajesViewModel : ViewModelBase, IRecipient<FavoritoCam
 
     /// <summary>
     /// Con filtros, el total informado es el de esa búsqueda (por ejemplo, los
-    /// muertos), no el del catálogo: sólo se toma del listado completo.
+    /// muertos), no el del catálogo: solo se toma del listado completo.
     /// </summary>
     private void RecordarTotalDelCatalogo(RespuestaPaginada pagina)
     {

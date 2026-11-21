@@ -10,7 +10,7 @@ public interface IServicioConectividad
 {
     /// <summary>
     /// Hay certeza de que no hay red: se está simulando el modo sin conexión o
-    /// el sistema no detecta ninguna red en absoluto. Sólo en este caso vale
+    /// el sistema no detecta ninguna red en absoluto. Solo en este caso vale
     /// la pena no intentar la petición.
     /// </summary>
     bool SinRedConfirmada { get; }

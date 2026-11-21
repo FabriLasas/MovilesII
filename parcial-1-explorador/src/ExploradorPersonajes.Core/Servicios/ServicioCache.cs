@@ -44,10 +44,10 @@ public class ServicioCache : IServicioCache
         {
             await File.WriteAllTextAsync(RutaDe(clave), contenido);
         }
-        catch (IOException)
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
             // La caché es un extra: si no se puede escribir (disco lleno,
-            // archivo en uso) la aplicación sigue funcionando igual.
+            // archivo en uso, sin permiso) la aplicación sigue funcionando igual.
         }
     }
 
@@ -61,7 +61,7 @@ public class ServicioCache : IServicioCache
             var contenido = await File.ReadAllTextAsync(ruta);
             return new EntradaCache(contenido, File.GetLastWriteTime(ruta));
         }
-        catch (IOException)
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
             return null;
         }

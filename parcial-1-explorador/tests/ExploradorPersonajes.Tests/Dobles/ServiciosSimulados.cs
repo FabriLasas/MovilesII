@@ -9,7 +9,7 @@ namespace ExploradorPersonajes.Tests.Dobles;
 
 /// <summary>
 /// Agrupa los mocks que necesitan los ViewModels. Cada prueba crea uno nuevo,
-/// configura sólo lo que le importa y después verifica las llamadas.
+/// configura solo lo que le importa y después verifica las llamadas.
 /// </summary>
 public class ServiciosSimulados
 {

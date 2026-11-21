@@ -53,7 +53,7 @@ public class ServicioMovimiento : IServicioMovimiento
     }
 
     /// <summary>
-    /// El sensor avisa desde otro hilo; la pantalla sólo se puede tocar desde
+    /// El sensor avisa desde otro hilo; la pantalla solo se puede tocar desde
     /// el principal.
     /// </summary>
     private void AlDetectarAgitado(object? sender, EventArgs e)

@@ -125,7 +125,7 @@ public class ServicioPersonajes : IServicioPersonajes
     /// </param>
     private async Task<ResultadoApi<T>> EjecutarAsync<T>(string rutaRelativa, bool esBusqueda, CancellationToken ct)
     {
-        // 1) Chequeo previo de conectividad: sólo si hay certeza de que no hay
+        // 1) Chequeo previo de conectividad: solo si hay certeza de que no hay
         //    red se evita la llamada, para responder al instante en lugar de
         //    esperar el timeout. En los casos dudosos se intenta igual.
         if (_conectividad.SinRedConfirmada)
@@ -154,7 +154,7 @@ public class ServicioPersonajes : IServicioPersonajes
                     "El servidor respondió con un formato inesperado.");
             }
 
-            // 4) Sólo se guarda en caché lo que se pudo interpretar bien, para
+            // 4) Solo se guarda en caché lo que se pudo interpretar bien, para
             //    no terminar mostrando sin conexión una respuesta dañada.
             await _cache.GuardarAsync(rutaRelativa, contenido);
 
@@ -178,7 +178,7 @@ public class ServicioPersonajes : IServicioPersonajes
         }
         catch (HttpRequestException ex)
         {
-            // Fallo de transporte. Recién acá se consulta al sistema, pero sólo
+            // Fallo de transporte. Recién acá se consulta al sistema, pero solo
             // para explicar el fallo: si además no informa internet, el
             // problema más probable es la conexión del dispositivo; si la
             // informa, es el servidor el que no responde (DNS, caída, certificado).
@@ -189,11 +189,23 @@ public class ServicioPersonajes : IServicioPersonajes
                     $"No se pudo contactar al servidor. ({ex.Message})")
                 : await RespaldoDesdeCacheAsync<T>(rutaRelativa, TipoError.SinConexion, MensajeSinConexion);
         }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            // Último recurso, como recomienda la cátedra: una falla que no
+            // corresponde a ninguno de los casos anteriores (un error del
+            // sistema, de permisos de archivos...) se convierte en un mensaje
+            // en lugar de cerrar la aplicación. Va al final porque los catch
+            // se evalúan en orden: los específicos primero.
+            // La cancelación pedida por el usuario se deja pasar: no es un error.
+            return ResultadoApi<T>.Fallo(
+                TipoError.Inesperado,
+                $"Ocurrió un error inesperado. Intentá de nuevo. ({ex.Message})");
+        }
     }
 
     /// <summary>
     /// Ante un problema de red, intenta responder con la última copia guardada
-    /// de esa misma consulta. Sólo se usa para fallos de conectividad: un 404
+    /// de esa misma consulta. Solo se usa para fallos de conectividad: un 404
     /// o un 500 son respuestas reales del servidor y se informan tal cual.
     /// </summary>
     private async Task<ResultadoApi<T>> RespaldoDesdeCacheAsync<T>(string rutaRelativa, TipoError motivo, string mensaje)

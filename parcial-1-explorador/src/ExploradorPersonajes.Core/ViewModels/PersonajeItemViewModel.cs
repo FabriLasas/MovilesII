@@ -45,7 +45,7 @@ public partial class PersonajeItemViewModel : ObservableObject
 
     public Personaje Modelo { get; }
 
-    // Datos del modelo que muestra la tarjeta. Se exponen de sólo lectura
+    // Datos del modelo que muestra la tarjeta. Se exponen de solo lectura
     // para que el XAML enlace contra el ViewModel y nunca directo al modelo.
     public int Id => Modelo.Id;
     public string Nombre => Modelo.Nombre;
@@ -66,7 +66,18 @@ public partial class PersonajeItemViewModel : ObservableObject
     [RelayCommand]
     private async Task AlternarFavoritoAsync()
     {
-        EsFavorito = await _servicios.Favoritos.AlternarAsync(Modelo);
+        try
+        {
+            EsFavorito = await _servicios.Favoritos.AlternarAsync(Modelo);
+        }
+        catch (Exception)
+        {
+            // La tarjeta no tiene dónde mostrar un mensaje: si no se pudo
+            // guardar, la estrella queda como estaba y no vibra, que es la
+            // señal de que el toque no tuvo efecto.
+            return;
+        }
+
         _servicios.Haptica.ConfirmarToque();
     }
 

@@ -13,7 +13,7 @@ public interface IServicioFavoritos
 {
     /// <summary>
     /// Carga los favoritos guardados. Se puede llamar las veces que haga
-    /// falta: sólo la primera llamada trabaja, las demás esperan esa misma
+    /// falta: solo la primera llamada trabaja, las demás esperan esa misma
     /// carga.
     /// </summary>
     Task InicializarAsync();

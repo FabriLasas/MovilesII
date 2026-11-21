@@ -9,7 +9,7 @@
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Se usa la galería para elegir la foto de un avistamiento.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Se usa tu ubicación, sólo si la pedís, para registrar dónde viste al personaje.</string>
+	<string>Se usa tu ubicación, solo si la pedís, para registrar dónde viste al personaje.</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>UIDeviceFamily</key>

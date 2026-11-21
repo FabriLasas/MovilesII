@@ -8,11 +8,11 @@ namespace ExploradorPersonajes.Servicios;
 /// <summary>
 /// Favoritos guardados en SQLite.
 ///
-/// Cambio respecto del Parcial 1: antes se guardaban sólo los ids en
+/// Cambio respecto del Parcial 1: antes se guardaban solo los ids en
 /// Preferences y los datos se pedían a la API cada vez, así que sin conexión
 /// la pestaña Favoritos dependía de que hubiera una copia de esa consulta
 /// exacta. Ahora cada favorito se guarda con sus datos y la pestaña funciona
-/// siempre; la API sólo se usa para refrescarlos.
+/// siempre; la API solo se usa para refrescarlos.
 /// </summary>
 public class ServicioFavoritos : IServicioFavoritos
 {
@@ -65,7 +65,7 @@ public class ServicioFavoritos : IServicioFavoritos
     }
 
     /// <summary>
-    /// Pasa a la base los favoritos de la versión anterior. Como ésta sólo
+    /// Pasa a la base los favoritos de la versión anterior. Como ésta solo
     /// guardaba ids, hay que pedir los datos a la API. Si falla (por ejemplo,
     /// sin conexión) los ids se conservan y se reintenta en el próximo inicio:
     /// el usuario nunca pierde un favorito por actualizar la aplicación.

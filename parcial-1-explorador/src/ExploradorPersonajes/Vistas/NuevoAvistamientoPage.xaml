@@ -74,7 +74,7 @@
                         </Image>
                     </Grid>
 
-                    <!--  La cámara sólo se ofrece si el dispositivo la tiene;
+                    <!--  La cámara solo se ofrece si el dispositivo la tiene;
                           la galería siempre está, como alternativa.  -->
                     <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
                         <Button

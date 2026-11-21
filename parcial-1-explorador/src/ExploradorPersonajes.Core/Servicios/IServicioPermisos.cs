@@ -14,14 +14,14 @@ public enum EstadoPermiso
 
 /// <summary>
 /// Comprobación y pedido de permisos en tiempo de ejecución. Cada pedido
-/// primero consulta el estado actual y sólo muestra el diálogo del sistema si
+/// primero consulta el estado actual y solo muestra el diálogo del sistema si
 /// el permiso todavía no fue concedido.
 /// </summary>
 public interface IServicioPermisos
 {
     Task<EstadoPermiso> SolicitarCamaraAsync();
 
-    /// <summary>Ubicación sólo mientras la app está en uso, nunca en segundo plano.</summary>
+    /// <summary>Ubicación solo mientras la app está en uso, nunca en segundo plano.</summary>
     Task<EstadoPermiso> SolicitarUbicacionAsync();
 
     /// <summary>

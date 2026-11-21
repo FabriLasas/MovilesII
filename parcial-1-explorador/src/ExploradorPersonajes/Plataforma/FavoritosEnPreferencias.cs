@@ -4,7 +4,7 @@ namespace ExploradorPersonajes.Plataforma;
 
 /// <summary>
 /// Lee los favoritos con el formato de la versión del Parcial 1: los ids como
-/// texto "1,5,12" en Preferences. Sólo se usa para pasarlos a la base de
+/// texto "1,5,12" en Preferences. Solo se usa para pasarlos a la base de
 /// datos la primera vez que se abre la versión nueva.
 /// </summary>
 public class FavoritosEnPreferencias : IFavoritosAnteriores

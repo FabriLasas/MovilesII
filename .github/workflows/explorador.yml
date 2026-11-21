@@ -63,7 +63,7 @@ jobs:
           key: nuget-pruebas-${{ runner.os }}-${{ hashFiles('parcial-1-explorador/**/*.csproj') }}
           restore-keys: nuget-pruebas-${{ runner.os }}-
 
-      # Las pruebas referencian sólo al núcleo, que es una biblioteca .NET
+      # Las pruebas referencian solo al núcleo, que es una biblioteca .NET
       # común: no hace falta instalar las cargas de trabajo de MAUI.
       - name: Restaurar
         run: dotnet restore tests/ExploradorPersonajes.Tests
@@ -142,7 +142,7 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.artefacto }}
-          # En Android sólo interesa el APK firmado; en Windows, la carpeta entera.
+          # En Android solo interesa el APK firmado; en Windows, la carpeta entera.
           path: ${{ matrix.plataforma == 'Android' && 'parcial-1-explorador/salida/*-Signed.apk' || 'parcial-1-explorador/salida' }}
           if-no-files-found: error
           retention-days: 14

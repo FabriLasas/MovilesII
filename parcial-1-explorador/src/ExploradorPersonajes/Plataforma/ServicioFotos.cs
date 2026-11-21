@@ -10,7 +10,7 @@ namespace ExploradorPersonajes.Plataforma;
 ///   guardar. Se vacía al iniciar la app, y Android la puede vaciar solo si
 ///   falta espacio.
 /// - Definitiva (en los datos de la app): fotos de avistamientos guardados.
-///   Sólo se borran al eliminar el avistamiento o al desinstalar la app.
+///   Solo se borran al eliminar el avistamiento o al desinstalar la app.
 /// </summary>
 public class ServicioFotos : IServicioFotos
 {
@@ -71,7 +71,7 @@ public class ServicioFotos : IServicioFotos
 
     public void Eliminar(string ruta)
     {
-        // Sólo se borran archivos de las carpetas propias: nunca una foto de
+        // Solo se borran archivos de las carpetas propias: nunca una foto de
         // la galería del usuario aunque llegara una ruta equivocada.
         if (!EstaEn(ruta, _carpetaTemporal) && !EstaEn(ruta, _carpetaDefinitiva))
         {

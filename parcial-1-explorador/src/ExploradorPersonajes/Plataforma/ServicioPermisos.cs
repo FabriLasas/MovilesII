@@ -23,7 +23,7 @@ public class ServicioPermisos : IServicioPermisos
     public void AbrirAjustes() => _appInfo.ShowSettingsUI();
 
     /// <summary>
-    /// Primero consulta el estado y sólo muestra el diálogo si hace falta: si
+    /// Primero consulta el estado y solo muestra el diálogo si hace falta: si
     /// el permiso ya estaba concedido, el usuario no ve nada. Los pedidos se
     /// hacen en el hilo principal, como exige el sistema para mostrar el
     /// diálogo.

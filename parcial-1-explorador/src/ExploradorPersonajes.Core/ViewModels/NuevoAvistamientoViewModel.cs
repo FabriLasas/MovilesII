@@ -155,7 +155,7 @@ public partial class NuevoAvistamientoViewModel : ViewModelBase
     }
 
     /// <summary>
-    /// La galería no pide permiso: el selector de fotos del sistema sólo le
+    /// La galería no pide permiso: el selector de fotos del sistema solo le
     /// entrega a la app la imagen que el usuario eligió. Por eso es la
     /// alternativa cuando se niega la cámara.
     /// </summary>
@@ -200,7 +200,7 @@ public partial class NuevoAvistamientoViewModel : ViewModelBase
     {
         var permiso = await _permisos.SolicitarUbicacionAsync();
 
-        // La ubicación es opcional: sin permiso no es un error, sólo se avisa
+        // La ubicación es opcional: sin permiso no es un error, solo se avisa
         // que el avistamiento se guardará sin ella.
         if (permiso != EstadoPermiso.Concedido)
         {
@@ -253,7 +253,7 @@ public partial class NuevoAvistamientoViewModel : ViewModelBase
             Fecha = _ahora()
         };
 
-        // Todas las reglas están en el validador: el ViewModel sólo reparte
+        // Todas las reglas están en el validador: el ViewModel solo reparte
         // los mensajes entre los campos de la pantalla.
         var validacion = ValidadorAvistamiento.Validar(avistamiento);
         ErrorFoto = validacion.ErrorDe(ValidadorAvistamiento.CampoFoto);
@@ -267,7 +267,7 @@ public partial class NuevoAvistamientoViewModel : ViewModelBase
         }
 
         // La foto recién sacada está en una carpeta temporal. Se copia a la
-        // definitiva sólo ahora que el avistamiento se va a guardar: así una
+        // definitiva solo ahora que el avistamiento se va a guardar: así una
         // foto descartada (o abandonada con el botón atrás) nunca queda
         // ocupando lugar en la carpeta de la app.
         var temporal = avistamiento.RutaFoto;

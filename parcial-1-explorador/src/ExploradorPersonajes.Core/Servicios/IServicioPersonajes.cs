@@ -13,7 +13,7 @@ public interface IServicioPersonajes
     /// Obtiene una página de personajes, opcionalmente filtrada.
     /// El filtrado se delega al servidor (la API acepta name y status como
     /// parámetros de consulta) en lugar de traer todo y filtrar en memoria:
-    /// se transfieren menos datos y funciona sobre los 826 registros, no sólo
+    /// se transfieren menos datos y funciona sobre los 826 registros, no solo
     /// sobre los ya descargados.
     /// </summary>
     /// <param name="pagina">Número de página, base 1.</param>

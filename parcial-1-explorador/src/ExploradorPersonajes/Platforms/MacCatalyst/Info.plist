@@ -9,7 +9,7 @@
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Se usa la galería para elegir la foto de un avistamiento.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Se usa tu ubicación, sólo si la pedís, para registrar dónde viste al personaje.</string>
+	<string>Se usa tu ubicación, solo si la pedís, para registrar dónde viste al personaje.</string>
     <!-- The Mac App Store requires you specify if the app uses encryption. -->
     <!-- Please consult https://developer.apple.com/documentation/bundleresources/information_property_list/itsappusesnonexemptencryption -->
     <!-- <key>ITSAppUsesNonExemptEncryption</key> -->

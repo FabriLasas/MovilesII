@@ -9,7 +9,7 @@
     x:DataType="vm:PersonajesViewModel"
     Title="{Binding Titulo}">
 
-    <!--  El acelerómetro se enciende sólo mientras esta pantalla está a la
+    <!--  El acelerómetro se enciende solo mientras esta pantalla está a la
           vista: al abrir un detalle o cambiar de pestaña se apaga.  -->
     <ContentPage.Behaviors>
         <comp:CicloDeVidaBehavior AlAparecer="{Binding ActivarSensorCommand}" AlDesaparecer="{Binding DesactivarSensorCommand}" />
@@ -50,7 +50,7 @@
                 Text="{Binding TextoSimulacion}" />
         </Grid>
 
-        <!--  Aviso visible sólo cuando lo que se ve es la copia guardada  -->
+        <!--  Aviso visible solo cuando lo que se ve es la copia guardada  -->
         <Border
             Grid.Row="2"
             IsVisible="{Binding MostrandoCache}"

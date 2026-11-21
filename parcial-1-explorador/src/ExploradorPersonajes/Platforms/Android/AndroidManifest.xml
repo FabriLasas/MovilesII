@@ -16,7 +16,7 @@
 	     el selector de fotos del sistema no necesita ningún permiso. -->
 	<uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
 
-	<!-- Ubicación del avistamiento, sólo mientras la app está en uso
+	<!-- Ubicación del avistamiento, solo mientras la app está en uso
 	     (permiso en tiempo de ejecución). Nunca en segundo plano. -->
 	<uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 	<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />

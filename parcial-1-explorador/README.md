@@ -2,17 +2,32 @@
 
 [![Explorador de Personajes](https://github.com/FabriLasas/MovilesII/actions/workflows/explorador.yml/badge.svg)](https://github.com/FabriLasas/MovilesII/actions/workflows/explorador.yml)
 
-Aplicación **.NET MAUI** desarrollada como Parte B del primer examen parcial de
-*Desarrollo de Aplicaciones Móviles 2*.
+Aplicación **.NET MAUI** desarrollada para los exámenes parciales de
+*Desarrollo de Aplicaciones Móviles 2*. Versión actual: **2.0** (Parcial 2).
 
 Consume la API pública de [Rick and Morty](https://rickandmortyapi.com/) y
 permite listar, buscar y filtrar personajes, consultar el detalle de cada uno y
-guardar favoritos. Sigue mostrando datos sin conexión a partir de una copia
-local.
+guardar favoritos en una base SQLite. Desde el detalle se registran
+**avistamientos** con una foto (cámara o galería), una nota y la ubicación GPS,
+y agitando el teléfono se abre un personaje al azar. Sigue funcionando sin
+conexión con los datos guardados.
 
 > La versión entregada en el **Parcial 1** quedó congelada en la etiqueta
 > [`parcial-1`](https://github.com/FabriLasas/MovilesII/tree/parcial-1/parcial-1-explorador).
 > Esta carpeta contiene la evolución del proyecto para el **Parcial 2**.
+
+## Evolución desde el Parcial 1
+
+| Área | Parcial 1 | Parcial 2 |
+|---|---|---|
+| Arquitectura | Un solo proyecto MAUI | Solución en capas: núcleo `ExploradorPersonajes.Core` sin MAUI, app MAUI y proyecto de pruebas |
+| Dependencias del dispositivo | Interfaces de MAUI usadas en los ViewModels (`IHapticFeedback`, `IQueryAttributable`) | Interfaces propias del núcleo; las implementaciones de MAUI viven en `Plataforma/` |
+| Favoritos | Ids como texto en `Preferences`; sin red dependían de la caché | Tabla SQLite con los datos y el orden; funcionan sin red. Migración automática de los favoritos viejos |
+| Pruebas | Ninguna | 174 pruebas: unitarias, con mocks y de integración con SQLite en memoria |
+| Integración continua | Ninguna | GitHub Actions: pruebas, matriz Android y Windows, caché y artefactos |
+| Hardware | Vibración corta al marcar favoritos | Cámara, galería, GPS, acelerómetro y vibración, con permisos en tiempo de ejecución |
+| Validaciones | Ninguna | Reglas centralizadas en `Validaciones/`, usadas por el formulario y la búsqueda |
+| Excepciones | Errores HTTP y de red clasificados | Además, un último recurso para fallas no previstas y protección de las tareas que corren sin que nadie las espere |
 
 ---
 
@@ -132,12 +147,22 @@ nunca necesita interpretar un código HTTP.
 | Recurso inexistente (404) | El personaje solicitado no existe |
 | Error 5xx | El servidor tuvo un problema interno |
 | JSON inesperado | No se pudieron interpretar los datos recibidos |
+| Cualquier otra falla no prevista | Ocurrió un error inesperado. Intentá de nuevo |
 
 Las dos filas con 404 merecen atención: la API responde con ese mismo código
 tanto cuando una búsqueda no arroja resultados como cuando se pide un personaje
 que no existe. En el primer caso no es un error sino un resultado vacío, y se
 informa sin formato de alerta. El servicio distingue ambos casos según la
 operación que se haya solicitado.
+
+El último caso es el `catch (Exception)` general que recomienda la cátedra.
+Va después de todos los específicos (los `catch` se evalúan en orden) y deja
+pasar la cancelación pedida por el usuario, que no es un error. Fuera del
+servicio, las operaciones con la base local están protegidas en los
+ViewModels: si fallan, se informa en pantalla y la app sigue funcionando. Es
+especialmente importante en las tareas que arrancan sin que nadie las espere
+(por ejemplo, la carga inicial de la pestaña Favoritos), porque una excepción
+ahí no llegaría a ningún `catch` y cerraría la aplicación.
 
 #### Sin conexión
 
@@ -151,7 +176,7 @@ La señal de conectividad del sistema **no se usa para bloquear peticiones**
 salvo cuando indica que no hay ninguna red. Durante las pruebas, Windows informó
 por un momento que no había internet estando conectado, y la aplicación mostraba
 "sin conexión" sin siquiera intentar la llamada. Ahora, en los casos dudosos se
-intenta la petición y la señal del sistema sólo se usa para explicar un fallo.
+intenta la petición y la señal del sistema solo se usa para explicar un fallo.
 
 #### Demostración
 
@@ -175,7 +200,7 @@ actuales a la API para refrescarlos.
 | `IRepositorioFavoritos` / `RepositorioFavoritosSqlite` | Alta, baja, lectura en orden y actualización de datos, con transacciones |
 | `ServicioFavoritos` | Lógica de favoritos sobre el repositorio, con una copia en memoria |
 
-**Cambio respecto del Parcial 1.** Antes se guardaban sólo los ids en
+**Cambio respecto del Parcial 1.** Antes se guardaban solo los ids en
 `Preferences` y los datos se pedían a la API cada vez: sin conexión, la pestaña
 dependía de que hubiera una copia en caché de esa consulta exacta. Al abrir la
 versión nueva, los ids guardados por la anterior se pasan solos a la base (se
@@ -189,7 +214,7 @@ endpoint tiene tres particularidades, verificadas contra la API:
 |---|---|
 | Con un solo id devuelve un **objeto**; con varios, un **array** | El caso de un único favorito se pide por separado |
 | Devuelve los personajes **ordenados por id**, no en el orden pedido | Se reordenan según el orden en que se marcaron |
-| Omite en silencio los ids inexistentes | Se muestran sólo los que llegaron |
+| Omite en silencio los ids inexistentes | Se muestran solo los que llegaron |
 
 Un mismo favorito se ve en tres lugares a la vez: la lista, la pestaña y el
 detalle. En lugar de que cada ViewModel conozca a los otros, `ServicioFavoritos`
@@ -211,7 +236,7 @@ parámetros.
 Shell entrega los parámetros llamando a `IQueryAttributable`, una interfaz de
 MAUI. Como `DetalleViewModel` vive en el núcleo, recibe el personaje con un
 método común (`Recibir`), y la app lo envuelve en `DetalleViewModelShell`, que
-agrega la interfaz y sólo delega. Se eligió `IQueryAttributable` por sobre el
+agrega la interfaz y solo delega. Se eligió `IQueryAttributable` por sobre el
 atributo `[QueryProperty]` porque hace explícito en el código dónde y cómo se
 recibe el parámetro, en lugar de depender de un mapeo por reflexión.
 
@@ -262,7 +287,7 @@ el mismo detalle, del más reciente al más antiguo.
 | Recurso | API de MAUI | Permiso en tiempo de ejecución |
 |---|---|---|
 | Cámara | `MediaPicker.CapturePhotoAsync` | `Permissions.Camera` |
-| Galería | `MediaPicker.PickPhotosAsync` | Ninguno: el selector de fotos del sistema sólo entrega la foto elegida |
+| Galería | `MediaPicker.PickPhotosAsync` | Ninguno: el selector de fotos del sistema solo entrega la foto elegida |
 | GPS | `Geolocation.GetLocationAsync` (precisión media, 10 s) con respaldo en `GetLastKnownLocationAsync` | `Permissions.LocationWhenInUse` |
 | Vibración | `Vibration.Vibrate(300 ms)` al guardar; `HapticFeedback` al tocar | No requiere diálogo (`VIBRATE` en el manifiesto) |
 
@@ -283,13 +308,13 @@ Criterios aplicados:
   completa el formulario y recién al guardar se copia a la carpeta de la app.
   Si el usuario cancela o sale con el botón atrás, la temporal se descarta al
   iniciar la app. Al eliminar un avistamiento se borra también su foto, pero
-  sólo después de quitar el registro de la base.
+  solo después de quitar el registro de la base.
 
 Configuración por plataforma:
 
 | Archivo | Qué declara |
 |---|---|
-| `Platforms/Android/AndroidManifest.xml` | `CAMERA`, `ACCESS_FINE_LOCATION`, `ACCESS_COARSE_LOCATION`, `READ_EXTERNAL_STORAGE` (sólo hasta Android 12), `VIBRATE`, cámara y GPS como hardware opcional, y la consulta del intent de captura que exige Android 11 |
+| `Platforms/Android/AndroidManifest.xml` | `CAMERA`, `ACCESS_FINE_LOCATION`, `ACCESS_COARSE_LOCATION`, `READ_EXTERNAL_STORAGE` (solo hasta Android 12), `VIBRATE`, cámara y GPS como hardware opcional, y la consulta del intent de captura que exige Android 11 |
 | `Platforms/iOS/Info.plist` y `Platforms/MacCatalyst/Info.plist` | `NSCameraUsageDescription`, `NSPhotoLibraryUsageDescription` y `NSLocationWhenInUseUsageDescription`: el texto que ve el usuario al pedir cada permiso, obligatorio en iOS |
 
 Todo el acceso al hardware está detrás de interfaces del núcleo
@@ -305,7 +330,7 @@ acelerómetro (o para quien prefiera tocar).
 
 - Se usa el evento `ShakeDetected` del acelerómetro de MAUI, a velocidad
   `SensorSpeed.Game`, la recomendada para detectar agitados.
-- **El sensor sólo está encendido mientras la lista está a la vista.**
+- **El sensor solo está encendido mientras la lista está a la vista.**
   `CicloDeVidaBehavior` ejecuta un comando del ViewModel cuando la página
   aparece y otro cuando deja de verse: al abrir un detalle o cambiar de pestaña
   el acelerómetro se apaga y no gasta batería.
@@ -313,7 +338,7 @@ acelerómetro (o para quien prefiera tocar).
   ejecuciones simultáneas, mientras se abre un personaje los avisos extra se
   ignoran: nunca se apilan varios detalles.
 - El id se elige entre 1 y el total del catálogo que informa la API. Ese total
-  sólo se toma del listado completo: con un filtro activo (por ejemplo, 287
+  solo se toma del listado completo: con un filtro activo (por ejemplo, 287
   muertos) quedaría afuera más de la mitad de los personajes.
 - No requiere permiso en tiempo de ejecución: Android e iOS consideran el
   acelerómetro un sensor no sensible.
@@ -338,7 +363,7 @@ lista como la pestaña de favoritos.
 ## Pruebas
 
 El proyecto `tests/ExploradorPersonajes.Tests` usa **xUnit** y **Moq**, y
-referencia sólo al núcleo. Las pruebas siguen la estructura *Arrange, Act,
+referencia solo al núcleo. Las pruebas siguen la estructura *Arrange, Act,
 Assert* y se nombran `Metodo_Escenario_ResultadoEsperado`.
 
 ```
@@ -381,13 +406,13 @@ push ──► Pruebas (ubuntu) ──┬──► Compilar Android (ubuntu)  �
 | Etapa | Qué hace |
 |---|---|
 | **Pruebas** | Restaura, compila y ejecuta `dotnet test`. Publica los resultados (`.trx`) como artefacto, incluso si alguna prueba falla. |
-| **Compilar** | Sólo corre si las pruebas pasan. Una **matriz** genera Android y Windows en paralelo, cada una en su sistema operativo, con `dotnet publish` en Release. |
+| **Compilar** | Solo corre si las pruebas pasan. Una **matriz** genera Android y Windows en paralelo, cada una en su sistema operativo, con `dotnet publish` en Release. |
 | **Artefactos** | El APK y la versión de Windows quedan para descargar desde la ejecución durante 14 días. |
-| **Caché** | Los paquetes NuGet se guardan entre ejecuciones; la clave cambia sólo si cambia algún `.csproj`. |
+| **Caché** | Los paquetes NuGet se guardan entre ejecuciones; la clave cambia solo si cambia algún `.csproj`. |
 
 Decisiones:
 
-- Las pruebas corren sin instalar MAUI, porque sólo dependen del núcleo. Así
+- Las pruebas corren sin instalar MAUI, porque solo dependen del núcleo. Así
   la etapa que más se repite es también la más rápida.
 - El filtro por rutas evita que un cambio en otra actividad del repositorio
   dispare este workflow.
@@ -415,5 +440,5 @@ Decisiones:
 - Agitar el teléfono (o tocar 🎲) para abrir un personaje al azar
 
 El filtrado y la búsqueda se delegan al servidor, que acepta `name` y `status`
-como parámetros de consulta. Filtrar en memoria sólo alcanzaría a los registros
+como parámetros de consulta. Filtrar en memoria solo alcanzaría a los registros
 ya descargados, no a los 826 del catálogo.

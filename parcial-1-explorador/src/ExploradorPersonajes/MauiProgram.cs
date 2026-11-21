@@ -62,7 +62,7 @@ public static class MauiProgram
 
         // --- Base de datos local ---
         // Una sola conexión para toda la app, sobre un archivo en la carpeta
-        // de datos (se borra sólo al desinstalar). SharedCache permite que
+        // de datos (se borra solo al desinstalar). SharedCache permite que
         // varios repositorios usen la misma base sin bloquearse.
         builder.Services.AddSingleton(_ => new SQLiteAsyncConnection(
             Path.Combine(FileSystem.AppDataDirectory, "explorador.db3"),

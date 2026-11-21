@@ -9,7 +9,7 @@ using Moq;
 namespace ExploradorPersonajes.Tests.Integracion;
 
 /// <summary>
-/// Servicio de favoritos + repositorio SQLite real en memoria. Sólo la API
+/// Servicio de favoritos + repositorio SQLite real en memoria. Solo la API
 /// es un mock, porque es lo único externo. Crear un segundo servicio sobre
 /// la misma base equivale a cerrar y volver a abrir la aplicación.
 /// </summary>

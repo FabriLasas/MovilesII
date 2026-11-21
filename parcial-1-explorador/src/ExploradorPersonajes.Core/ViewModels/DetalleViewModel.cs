@@ -16,7 +16,7 @@ namespace ExploradorPersonajes.ViewModels;
 /// Recibe el personaje con <see cref="Recibir"/>, que toma los parámetros de
 /// navegación como un diccionario común. No implementa IQueryAttributable
 /// porque esa interfaz es de MAUI y el núcleo no depende de la plataforma: la
-/// aplicación la agrega en una subclase que sólo delega en este método.
+/// aplicación la agrega en una subclase que solo delega en este método.
 /// </summary>
 public partial class DetalleViewModel : ViewModelBase, IRecipient<AvistamientoGuardadoMensaje>
 {
@@ -95,7 +95,16 @@ public partial class DetalleViewModel : ViewModelBase, IRecipient<AvistamientoGu
     {
         if (Personaje is null) return;
 
-        EsFavorito = await _favoritos.AlternarAsync(Personaje);
+        try
+        {
+            EsFavorito = await _favoritos.AlternarAsync(Personaje);
+        }
+        catch (Exception ex)
+        {
+            MostrarError($"No se pudo guardar el favorito. ({ex.Message})");
+            return;
+        }
+
         _haptica.ConfirmarToque();
     }
 
@@ -151,7 +160,7 @@ public partial class DetalleViewModel : ViewModelBase, IRecipient<AvistamientoGu
             return;
         }
 
-        // La foto sólo se borra después de quitar el registro: si fallara al
+        // La foto solo se borra después de quitar el registro: si fallara al
         // revés, quedaría un avistamiento apuntando a una foto inexistente.
         _fotos.Eliminar(item.Modelo.RutaFoto);
         Avistamientos.Remove(item);

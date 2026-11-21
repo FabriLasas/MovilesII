@@ -14,7 +14,8 @@ public enum TipoError
     NoEncontrado,     // El recurso pedido no existe (404 "real")
     ErrorCliente,     // Otros 4xx
     ErrorServidor,    // 5xx
-    RespuestaInvalida // Llegó un 200 pero el JSON no se pudo deserializar
+    RespuestaInvalida, // Llegó un 200 pero el JSON no se pudo deserializar
+    Inesperado        // Cualquier otra falla no prevista (último recurso)
 }
 
 /// <summary>
