@@ -51,6 +51,11 @@ En Android (con un emulador o dispositivo conectado):
 dotnet build src/ExploradorPersonajes -t:Run -f net10.0-android
 ```
 
+En Visual Studio: abrir `ExploradorPersonajes.slnx`, elegir **ExploradorPersonajes**
+como proyecto de inicio (en la lista junto al botón ▶; Visual Studio puede
+proponer `ExploradorPersonajes.Core`, que es una biblioteca y no se puede
+ejecutar) y un emulador o dispositivo Android como destino.
+
 Pruebas automatizadas (no necesitan emulador ni las cargas de trabajo de MAUI):
 
 ```bash
