@@ -72,7 +72,8 @@ public partial class FavoritosViewModel : ViewModelBase, IRecipient<FavoritoCamb
     private async Task CargarAsync()
     {
         // Esta carga arranca desde el constructor sin que nadie la espere:
-        // una excepción acá no llegaría a ningún catch y cerraría la app.
+        // una excepción acá no llegaría a ningún catch, se perdería en
+        // silencio y la pestaña quedaría vacía sin ninguna explicación.
         try
         {
             await _favoritos.InicializarAsync();

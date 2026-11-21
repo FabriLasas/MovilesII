@@ -164,10 +164,12 @@ El último caso es el `catch (Exception)` general que recomienda la cátedra.
 Va después de todos los específicos (los `catch` se evalúan en orden) y deja
 pasar la cancelación pedida por el usuario, que no es un error. Fuera del
 servicio, las operaciones con la base local están protegidas en los
-ViewModels: si fallan, se informa en pantalla y la app sigue funcionando. Es
-especialmente importante en las tareas que arrancan sin que nadie las espere
-(por ejemplo, la carga inicial de la pestaña Favoritos), porque una excepción
-ahí no llegaría a ningún `catch` y cerraría la aplicación.
+ViewModels: si fallan, se informa en pantalla y la app sigue funcionando. Sin
+esa protección habría dos problemas distintos. En un comando (por ejemplo,
+marcar un favorito), una excepción sin capturar cierra la aplicación, porque el
+Toolkit la vuelve a lanzar. En una tarea que arranca sin que nadie la espere,
+como la carga inicial de la pestaña Favoritos, la excepción se pierde en
+silencio y la pestaña queda vacía sin ninguna explicación.
 
 #### Sin conexión
 
