@@ -1,6 +1,7 @@
 using ExploradorPersonajes.Modelos;
 using ExploradorPersonajes.Servicios;
 using ExploradorPersonajes.Tests.Dobles;
+using ExploradorPersonajes.ViewModels;
 using Moq;
 
 namespace ExploradorPersonajes.Tests.ViewModels;
@@ -19,12 +20,20 @@ public class PersonajeAlAzarTests
 
     private void Agitar() => _s.Movimiento.Raise(m => m.Agitado += null, EventArgs.Empty);
 
+    /// <summary>Crea el ViewModel con la lista a la vista, como al abrir la app.</summary>
+    private PersonajesViewModel ListaVisible()
+    {
+        var vm = _s.CrearPersonajesViewModel();
+        vm.ActivarSensorCommand.Execute(null);
+        return vm;
+    }
+
     [Fact]
     public void Agitar_AbreElDetalleDeUnPersonajeAlAzarYVibra()
     {
         _s.IdAlAzar = 7;
         ApiDevuelvePersonaje(7, "Abradolf Lincler");
-        var vm = _s.CrearPersonajesViewModel();
+        var vm = ListaVisible();
 
         Agitar();
 
@@ -37,7 +46,7 @@ public class PersonajeAlAzarTests
     public void Agitar_AntesDeCargarNada_EligeEntreLos826DelCatalogo()
     {
         ApiDevuelvePersonaje(42, "X");
-        _s.CrearPersonajesViewModel();
+        ListaVisible();
 
         Agitar();
 
@@ -49,7 +58,7 @@ public class PersonajeAlAzarTests
     {
         _s.ResponderPagina(1, DatosDePrueba.PaginaExitosa(900, true, 1));
         ApiDevuelvePersonaje(42, "X");
-        var vm = _s.CrearPersonajesViewModel();
+        var vm = ListaVisible();
         await vm.CargarPersonajesCommand.ExecuteAsync(null);
 
         Agitar();
@@ -64,7 +73,7 @@ public class PersonajeAlAzarTests
         // afuera a más de la mitad de los personajes.
         _s.ResponderPagina(1, DatosDePrueba.PaginaExitosa(287, true, 1));
         ApiDevuelvePersonaje(42, "X");
-        var vm = _s.CrearPersonajesViewModel();
+        var vm = ListaVisible();
         vm.FiltroSeleccionado = vm.OpcionesFiltro.Single(o => o.Etiqueta == "Muertos");
         await vm.CargarPersonajesCommand.ExecuteAsync(null);
 
@@ -81,7 +90,7 @@ public class PersonajeAlAzarTests
         var respuesta = new TaskCompletionSource<ResultadoApi<Personaje>>();
         _s.Api.Setup(a => a.ObtenerPersonajePorIdAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
               .Returns(respuesta.Task);
-        _s.CrearPersonajesViewModel();
+        ListaVisible();
 
         Agitar();
         Agitar();
@@ -97,7 +106,7 @@ public class PersonajeAlAzarTests
     {
         _s.Api.Setup(a => a.ObtenerPersonajePorIdAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
               .ReturnsAsync(ResultadoApi<Personaje>.Fallo(TipoError.SinConexion, "No hay conexión a internet."));
-        var vm = _s.CrearPersonajesViewModel();
+        var vm = ListaVisible();
 
         Agitar();
 
@@ -107,10 +116,36 @@ public class PersonajeAlAzarTests
     }
 
     [Fact]
+    public void Agitar_ConLaListaFueraDeVista_NoAbreNada()
+    {
+        // Un aviso del sensor que llega después de salir de la lista (quedó
+        // encolado al abrir un detalle) no debe abrir otro personaje.
+        ApiDevuelvePersonaje(42, "X");
+        var vm = ListaVisible();
+        vm.DesactivarSensorCommand.Execute(null);
+
+        Agitar();
+
+        _s.Api.Verify(a => a.ObtenerPersonajePorIdAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
+        _s.Navegacion.Verify(n => n.IrADetalleAsync(It.IsAny<Personaje>()), Times.Never);
+    }
+
+    [Fact]
+    public void Agitar_AntesDeQueLaListaAparezca_NoAbreNada()
+    {
+        ApiDevuelvePersonaje(42, "X");
+        _s.CrearPersonajesViewModel();
+
+        Agitar();
+
+        _s.Navegacion.Verify(n => n.IrADetalleAsync(It.IsAny<Personaje>()), Times.Never);
+    }
+
+    [Fact]
     public async Task BotonAlAzar_HaceLoMismoQueAgitar()
     {
         ApiDevuelvePersonaje(42, "Bird Person");
-        var vm = _s.CrearPersonajesViewModel();
+        var vm = ListaVisible();
 
         await vm.PersonajeAlAzarCommand.ExecuteAsync(null);
 
@@ -136,7 +171,7 @@ public class PersonajeAlAzarTests
     {
         _s.Movimiento.SetupGet(m => m.EstaDisponible).Returns(hayAcelerometro);
 
-        var vm = _s.CrearPersonajesViewModel();
+        var vm = ListaVisible();
 
         Assert.Equal(hayAcelerometro, vm.SensorDisponible);
         Assert.Equal(esperado, vm.MensajeEstado);

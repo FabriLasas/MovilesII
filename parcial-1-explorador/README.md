@@ -23,7 +23,7 @@ conexión con los datos guardados.
 | Arquitectura | Un solo proyecto MAUI | Solución en capas: núcleo `ExploradorPersonajes.Core` sin MAUI, app MAUI y proyecto de pruebas |
 | Dependencias del dispositivo | Interfaces de MAUI usadas en los ViewModels (`IHapticFeedback`, `IQueryAttributable`) | Interfaces propias del núcleo; las implementaciones de MAUI viven en `Plataforma/` |
 | Favoritos | Ids como texto en `Preferences`; sin red dependían de la caché | Tabla SQLite con los datos y el orden; funcionan sin red. Migración automática de los favoritos viejos |
-| Pruebas | Ninguna | 174 pruebas: unitarias, con mocks y de integración con SQLite en memoria |
+| Pruebas | Ninguna | 176 pruebas: unitarias, con mocks y de integración con SQLite en memoria |
 | Integración continua | Ninguna | GitHub Actions: pruebas, matriz Android y Windows, caché y artefactos |
 | Hardware | Vibración corta al marcar favoritos | Cámara, galería, GPS, acelerómetro y vibración, con permisos en tiempo de ejecución |
 | Validaciones | Ninguna | Reglas centralizadas en `Validaciones/`, usadas por el formulario y la búsqueda |
@@ -334,6 +334,10 @@ acelerómetro (o para quien prefiera tocar).
   `CicloDeVidaBehavior` ejecuta un comando del ViewModel cuando la página
   aparece y otro cuando deja de verse: al abrir un detalle o cambiar de pestaña
   el acelerómetro se apaga y no gasta batería.
+- Los avisos del sensor llegan desde otro hilo y se encolan para el principal:
+  uno puede llegar cuando la lista ya no está a la vista. El ViewModel solo los
+  atiende entre el comando que enciende el sensor y el que lo apaga, así que un
+  aviso tardío nunca abre un personaje que nadie pidió.
 - Un agitado genera varios avisos seguidos del sensor. Como el comando no admite
   ejecuciones simultáneas, mientras se abre un personaje los avisos extra se
   ignoran: nunca se apilan varios detalles.

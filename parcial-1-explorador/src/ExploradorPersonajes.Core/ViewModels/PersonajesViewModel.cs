@@ -49,6 +49,12 @@ public partial class PersonajesViewModel : ViewModelBase, IRecipient<FavoritoCam
     private int _totalCatalogo = TotalCatalogoInicial;
 
     /// <summary>
+    /// Indica si la lista está a la vista con el sensor encendido. Los avisos
+    /// de agitado que lleguen fuera de ese período se descartan.
+    /// </summary>
+    private bool _sensorActivo;
+
+    /// <summary>
     /// Permite cancelar la búsqueda pendiente cuando el usuario sigue
     /// escribiendo, y también la llamada en curso si ya había salido.
     /// </summary>
@@ -387,11 +393,19 @@ public partial class PersonajesViewModel : ViewModelBase, IRecipient<FavoritoCam
     /// invoca la vista al aparecer (CicloDeVidaBehavior).
     /// </summary>
     [RelayCommand]
-    private void ActivarSensor() => _movimiento.Iniciar();
+    private void ActivarSensor()
+    {
+        _sensorActivo = true;
+        _movimiento.Iniciar();
+    }
 
     /// <summary>Lo apaga al salir de la pantalla, para no gastar batería.</summary>
     [RelayCommand]
-    private void DesactivarSensor() => _movimiento.Detener();
+    private void DesactivarSensor()
+    {
+        _sensorActivo = false;
+        _movimiento.Detener();
+    }
 
     /// <summary>
     /// Un mismo agitado puede generar varios avisos seguidos del sensor. Como
@@ -400,6 +414,14 @@ public partial class PersonajesViewModel : ViewModelBase, IRecipient<FavoritoCam
     /// </summary>
     private void AlAgitar(object? sender, EventArgs e)
     {
+        // El sensor avisa desde otro hilo y el aviso se encola para el hilo
+        // principal: puede llegar cuando la lista ya no está a la vista (por
+        // ejemplo, justo después de abrir un detalle). Ese aviso se ignora.
+        if (!_sensorActivo)
+        {
+            return;
+        }
+
         if (PersonajeAlAzarCommand.CanExecute(null))
         {
             _ = PersonajeAlAzarCommand.ExecuteAsync(null);
