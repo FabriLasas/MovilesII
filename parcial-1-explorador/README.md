@@ -364,6 +364,11 @@ tener. Por eso se implementan como **Behaviors** declarados en el XAML:
 Al marcar un favorito el teléfono vibra brevemente. En dispositivos sin motor de
 vibración (una PC) el pedido se ignora sin afectar la acción.
 
+En Android la aplicación se usa en vertical (en cualquiera de los dos sentidos).
+En horizontal, los controles fijos de la pantalla principal (botones, búsqueda y
+filtros) ocupaban toda la altura y la lista quedaba sin espacio; adaptar esa
+pantalla a horizontal y a tabletas queda como mejora pendiente.
+
 La tarjeta está definida una sola vez en `Vistas/Plantillas` y la usan tanto la
 lista como la pestaña de favoritos.
 
