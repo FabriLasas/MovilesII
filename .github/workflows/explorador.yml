@@ -16,12 +16,12 @@ on:
   push:
     branches: [main]
     paths:
-      - "parcial-1-explorador/**"
+      - "explorador-personajes/**"
       - ".github/workflows/explorador.yml"
   pull_request:
     branches: [main]
     paths:
-      - "parcial-1-explorador/**"
+      - "explorador-personajes/**"
       - ".github/workflows/explorador.yml"
   # Permite ejecutarlo a mano desde la pestaña Actions.
   workflow_dispatch:
@@ -41,7 +41,7 @@ env:
 
 defaults:
   run:
-    working-directory: parcial-1-explorador
+    working-directory: explorador-personajes
 
 jobs:
   pruebas:
@@ -60,7 +60,7 @@ jobs:
         uses: actions/cache@v6
         with:
           path: ${{ env.NUGET_PACKAGES }}
-          key: nuget-pruebas-${{ runner.os }}-${{ hashFiles('parcial-1-explorador/**/*.csproj') }}
+          key: nuget-pruebas-${{ runner.os }}-${{ hashFiles('explorador-personajes/**/*.csproj') }}
           restore-keys: nuget-pruebas-${{ runner.os }}-
 
       # Las pruebas referencian solo al núcleo, que es una biblioteca .NET
@@ -84,7 +84,7 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: resultados-pruebas
-          path: parcial-1-explorador/resultados-pruebas
+          path: explorador-personajes/resultados-pruebas
           retention-days: 14
 
   compilar:
@@ -126,7 +126,7 @@ jobs:
         uses: actions/cache@v6
         with:
           path: ${{ env.NUGET_PACKAGES }}
-          key: nuget-${{ matrix.plataforma }}-${{ hashFiles('parcial-1-explorador/**/*.csproj') }}
+          key: nuget-${{ matrix.plataforma }}-${{ hashFiles('explorador-personajes/**/*.csproj') }}
           restore-keys: nuget-${{ matrix.plataforma }}-
 
       # publish restaura y compila antes de generar el paquete.
@@ -143,6 +143,6 @@ jobs:
         with:
           name: ${{ matrix.artefacto }}
           # En Android solo interesa el APK firmado; en Windows, la carpeta entera.
-          path: ${{ matrix.plataforma == 'Android' && 'parcial-1-explorador/salida/*-Signed.apk' || 'parcial-1-explorador/salida' }}
+          path: ${{ matrix.plataforma == 'Android' && 'explorador-personajes/salida/*-Signed.apk' || 'explorador-personajes/salida' }}
           if-no-files-found: error
           retention-days: 14

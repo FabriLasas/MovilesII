@@ -14,7 +14,7 @@ proyectos independientes: no comparten código entre sí.
 | [`01-perfil-alumno`](01-perfil-alumno) | Perfil del alumno, con ejercicio de navegación | .NET MAUI |
 | [`02-agenda-contactos-consola`](02-agenda-contactos-consola) | Agenda de contactos, primera versión | Consola + SQLite |
 | [`03-agenda-contactos-maui`](03-agenda-contactos-maui) | Agenda de contactos, versión final | .NET MAUI + SQLite |
-| [`parcial-1-explorador`](parcial-1-explorador) | **Exámenes parciales 1 y 2**: explorador de personajes. La entrega del primero quedó en la etiqueta [`parcial-1`](https://github.com/FabriLasas/MovilesII/tree/parcial-1/parcial-1-explorador) | .NET MAUI + SQLite + xUnit + GitHub Actions |
+| [`explorador-personajes`](explorador-personajes) | **Exámenes parciales 1 y 2**: explorador de personajes. La entrega del primero quedó en la etiqueta [`parcial-1`](https://github.com/FabriLasas/MovilesII/tree/parcial-1/parcial-1-explorador) | .NET MAUI + SQLite + xUnit + GitHub Actions |
 
 Cada carpeta contiene el proyecto completo y compilable. `01-perfil-alumno`
 incluye además el ejercicio de navegación ya integrado: servicios de navegación
@@ -37,7 +37,7 @@ antes de integrarlo a `main`.
 Para compartir una actividad puntual alcanza con enlazar su carpeta:
 
 ```
-https://github.com/FabriLasas/MovilesII/tree/main/parcial-1-explorador
+https://github.com/FabriLasas/MovilesII/tree/main/explorador-personajes
 ```
 
 ### Ramas anteriores
